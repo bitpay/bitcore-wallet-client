@@ -1626,7 +1626,7 @@ describe('client API', function() {
 
   describe('Mobility, backup & restore', function() {
     describe('Export & Import', function() {
-      describe('Success', function() {
+      describe('1-1', function() {
         var address, importedClient;
         beforeEach(function(done) {
           importedClient = null;
@@ -1639,7 +1639,11 @@ describe('client API', function() {
             });
           });
         });
-        afterEach(function(done) {
+        it('should export & import', function(done) {
+          var exported = clients[0].export();
+
+          importedClient = helpers.newClient(app);
+          importedClient.import(exported);
           importedClient.getMainAddresses({}, function(err, list) {
             should.not.exist(err);
             should.exist(list);
@@ -1647,13 +1651,6 @@ describe('client API', function() {
             list[0].address.should.equal(address);
             done();
           });
-        });
-
-        it('should export & import', function() {
-          var exported = clients[0].export();
-
-          importedClient = helpers.newClient(app);
-          importedClient.import(exported);
         });
         it('should export & import compressed', function(done) {
           var walletId = clients[0].credentials.walletId;
@@ -1663,7 +1660,6 @@ describe('client API', function() {
           var exported = clients[0].export({
             compressed: true
           });
-
           importedClient = helpers.newClient(app);
           importedClient.import(exported, {
             compressed: true
@@ -1673,9 +1669,85 @@ describe('client API', function() {
             importedClient.credentials.walletId.should.equal(walletId);
             importedClient.credentials.walletName.should.equal(walletName);
             importedClient.credentials.copayerName.should.equal(copayerName);
-            done();
+            importedClient.getMainAddresses({}, function(err, list) {
+              should.not.exist(err);
+              should.exist(list);
+              list.length.should.equal(1);
+              list[0].address.should.equal(address);
+              done();
+            });
           });
         });
+        it('should import compressed and recreate', function(done) {
+          var walletId = clients[0].credentials.walletId;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          var exported = clients[0].export({
+            compressed: true
+          });
+
+          // New BWS server...
+          var storage = new Storage({
+            db: helpers.newDb(),
+          });
+          var newApp;
+          var expressApp = new ExpressApp();
+          expressApp.start({
+              storage: storage,
+              blockchainExplorer: blockchainExplorerMock,
+              disableLogs: true,
+            },
+            function() {
+              newApp = expressApp.app;
+              importedClient = helpers.newClient(newApp);
+              importedClient.import(exported, {
+                compressed: true
+              });
+              importedClient.recreateWallet(function(err) {
+                should.not.exist(err);
+                importedClient.credentials.walletId.should.equal(walletId);
+                importedClient.credentials.walletName.should.equal(walletName);
+                importedClient.credentials.copayerName.should.equal(copayerName);
+                done();
+              });
+            });
+        });
+
+        it('should import compressed v1', function(done) {
+          var exported = '["1.0.0","tprv8ZgxMBicQKsPewe7PxZQu9baaytXS8sHB68AHeJwhKpaz57j3jTvVUdQGvhNL9Scv6j7fHUAds522MUsaBGEZ2ASEzUXBs5D6w5WjgjLtnH",null,"","",1,1,[],"vNx2zVC7eIGNcgZWngUqcA==","c273d359-dfa9-4cc1-8269-82a740c3ddc2","wallet name","creator"]';
+          importedClient = helpers.newClient(app);
+          importedClient.import(exported, {
+            compressed: true
+          });
+          // New BWS server...
+          var storage = new Storage({
+            db: helpers.newDb(),
+          });
+          var newApp;
+          var expressApp = new ExpressApp();
+          expressApp.start({
+              storage: storage,
+              blockchainExplorer: blockchainExplorerMock,
+              disableLogs: true,
+            },
+            function() {
+              newApp = expressApp.app;
+              importedClient = helpers.newClient(newApp);
+              importedClient.import(exported, {
+                compressed: true
+              });
+              importedClient.recreateWallet(function(err) {
+                should.not.exist(err);
+                importedClient.credentials.walletId.should.equal('c273d359-dfa9-4cc1-8269-82a740c3ddc2');
+                importedClient.credentials.walletName.should.equal('wallet name');
+                importedClient.credentials.copayerName.should.equal('creator');
+                done();
+              });
+            });
+        });
+
+
         it('should export without signing rights', function() {
           clients[0].canSign().should.be.true;
           var exported = clients[0].export({
@@ -1687,9 +1759,93 @@ describe('client API', function() {
           importedClient.canSign().should.be.false;
         });
       });
-      describe('Fail', function() {
-        it.skip('should fail to export compressed & import uncompressed', function() {});
-        it.skip('should fail to export uncompressed & import compressed', function() {});
+      describe('2-2', function() {
+        var address, importedClient;
+        beforeEach(function(done) {
+          importedClient = null;
+          helpers.createAndJoinWallet(clients, 2, 3, function() {
+            clients[0].createAddress(function(err, addr) {
+              should.not.exist(err);
+              should.exist(addr.address);
+              address = addr.address;
+              done();
+            });
+          });
+        });
+        it('should export & import', function(done) {
+          var exported = clients[0].export();
+
+          importedClient = helpers.newClient(app);
+          importedClient.import(exported);
+          importedClient.getMainAddresses({}, function(err, list) {
+            should.not.exist(err);
+            should.exist(list);
+            list.length.should.equal(1);
+            list[0].address.should.equal(address);
+            done();
+          });
+        });
+        it('should export & import compressed', function(done) {
+          var walletId = clients[0].credentials.walletId;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          var exported = clients[0].export({
+            compressed: true
+          });
+          importedClient = helpers.newClient(app);
+          importedClient.import(exported, {
+            compressed: true
+          });
+          importedClient.openWallet(function(err) {
+            should.not.exist(err);
+            importedClient.credentials.walletId.should.equal(walletId);
+            importedClient.credentials.walletName.should.equal(walletName);
+            importedClient.credentials.copayerName.should.equal(copayerName);
+            importedClient.getMainAddresses({}, function(err, list) {
+              should.not.exist(err);
+              should.exist(list);
+              list.length.should.equal(1);
+              list[0].address.should.equal(address);
+              done();
+            });
+          });
+        });
+        it('should import compressed and recreate', function(done) {
+          var walletId = clients[0].credentials.walletId;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          var exported = clients[0].export({
+            compressed: true
+          });
+
+          // New BWS server...
+          var storage = new Storage({
+            db: helpers.newDb(),
+          });
+          var newApp;
+          var expressApp = new ExpressApp();
+          expressApp.start({
+              storage: storage,
+              blockchainExplorer: blockchainExplorerMock,
+              disableLogs: true,
+            },
+            function() {
+              newApp = expressApp.app;
+              importedClient = helpers.newClient(newApp);
+              importedClient.import(exported, {
+                compressed: true
+              });
+              importedClient.recreateWallet(function(err) {
+                should.not.exist(err);
+                importedClient.credentials.walletId.should.equal(walletId);
+                importedClient.credentials.walletName.should.equal(walletName);
+                importedClient.credentials.copayerName.should.equal(copayerName);
+                done();
+              });
+            });
+        });
       });
     });
 
