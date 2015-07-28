@@ -113,6 +113,7 @@ Note that the scripts created two files named `irene.dat` and `thomas.dat`. With
 * [api.setPrivateKeyEncryption(password, opts)](#API#getTxHistory)
 * [api.unlock(password)](#API#unlock)
 * [api.lock()](#API#lock)
+* [api.getUtxos()](#API#getUtxos)
 
 <a name="new_API"></a>
 ###new API(opts)
@@ -213,10 +214,20 @@ Send a transaction proposal
 
 **Params**
 
-- opts `Object`  
-  - toAddress `String`  
-  - amount `Number`  
-  - message `String`  
+For a proposal with one output:
+
+- opts `Object`
+  - toAddress `String`
+  - amount `Number`
+  - message `String`
+
+For a proposal with multiple outputs:
+
+- opts `Object`
+  - outputs `Array`
+    - toAddress `String`
+    - amount `Number`
+    - message `String`
 
 **Returns**: `Callback` - cb - Return error or the transaction proposal  
 <a name="API#createAddress"></a>
@@ -374,3 +385,6 @@ afterwards to remove the uncrypted private key.
 
 Removes the unencrypted private key.
 
+###api.getUtxos()
+<a name="API#getUtxos"></a>
+Get list of wallet's Unspent Transaction Outputs.

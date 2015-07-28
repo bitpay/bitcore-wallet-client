@@ -142,8 +142,9 @@ blockchainExplorerMock.setHistory = function(txs) {
 };
 
 blockchainExplorerMock.getTransactions = function(addresses, from, to, cb) {
-  // TODO: add support for from/to params
-  return cb(null, blockchainExplorerMock.txHistory || []);
+  var list = [].concat(blockchainExplorerMock.txHistory);
+  list = _.slice(list, from, to);
+  return cb(null, list);
 };
 
 blockchainExplorerMock.getAddressActivity = function(addresses, cb) {
@@ -151,9 +152,20 @@ blockchainExplorerMock.getAddressActivity = function(addresses, cb) {
   return cb(null, _.intersection(addr, addresses).length > 0);
 };
 
+blockchainExplorerMock.setFeeLevels = function(levels) {
+  blockchainExplorerMock.feeLevels = levels;
+};
+
+blockchainExplorerMock.estimateFee = function(nbBlocks, cb) {
+  return cb(null, {
+    feePerKB: blockchainExplorerMock.feeLevels[nbBlocks] / 1e8
+  });
+};
+
 blockchainExplorerMock.reset = function() {
   blockchainExplorerMock.utxos = [];
   blockchainExplorerMock.txHistory = [];
+  blockchainExplorerMock.feeLevels = [];
 };
 
 
@@ -190,7 +202,6 @@ describe('client API', function() {
     sandbox.restore();
     done();
   });
-
 
   describe('Client Internals', function() {
     it('should expose bitcore', function() {
@@ -290,10 +301,30 @@ describe('client API', function() {
     });
 
     it('should handle critical errors (Case4)', function(done) {
-      var body = { code: 999, message: 'unexpected body'};
+      var body = {
+        code: 999,
+        message: 'unexpected body'
+      };
       var ret = Client._parseError(body);
       ret.toString().indexOf('ClientError').should.not.equal(-1);
       done();
+    });
+
+    it('should handle critical errors (Case5)', function(done) {
+      var err = 'some error';
+      var res, body; // leave them undefined to simulate no-response
+      var requestStub = function(args, cb) {
+        cb(err, res, body);
+      };
+      var request = sinon.stub(clients[0], 'request', requestStub);
+      clients[0].createWallet('wallet name', 'creator', 1, 2, {
+        network: 'testnet'
+      }, function(err, secret) {
+        should.exist(err);
+        err.code.should.equal('CONNERROR');
+        request.restore();
+        done();
+      });
     });
   });
 
@@ -444,6 +475,31 @@ describe('client API', function() {
           status.wallet.secret.should.equal(secret);
           done();
         });
+      });
+    });
+    it('should prepare wallet with external xpubkey', function(done) {
+      var client = helpers.newClient(app);
+      client.seedFromExternalWalletPublicKey('xpub6D52jcEfKA4cGeGcVC9pwG37Ju8pUMQrhptw82QVHRSAGBELE5uCee7Qq8RJUqQVyxfJfwbJKYyqyFhc2Xg8cJyN11kRvnAaWcACXP6K0zv', 'ledger', 2);
+      client.isPrivKeyExternal().should.equal(true);
+      client.getPrivKeyExternalSourceName().should.equal('ledger');
+      client.getExternalIndex().should.equal(2);
+      done();
+    });
+  });
+
+  describe('Network fees', function() {
+    it('should get current fee levels', function(done) {
+      blockchainExplorerMock.setFeeLevels({
+        1: 40000,
+        3: 20000,
+        10: 18000,
+      });
+      clients[0].credentials = {};
+      clients[0].getFeeLevels('livenet', function(err, levels) {
+        should.not.exist(err);
+        should.exist(levels);
+        _.difference(['emergency', 'priority', 'normal', 'economy'], _.pluck(levels, 'level')).should.be.empty;
+        done();
       });
     });
   });
@@ -864,6 +920,24 @@ describe('client API', function() {
         });
       });
     });
+    it('Should return UTXOs', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+        clients[0].getUtxos(function(err, utxos) {
+          should.not.exist(err);
+          utxos.length.should.equal(0)
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            should.exist(x0.address);
+            blockchainExplorerMock.setUtxo(x0, 1, 1);
+            clients[0].getUtxos(function(err, utxos) {
+              should.not.exist(err);
+              utxos.length.should.equal(1);
+              done();
+            });
+          });
+        });
+      });
+    });
   });
 
   describe('Payment Protocol', function() {
@@ -1073,6 +1147,137 @@ describe('client API', function() {
           });
         });
       });
+    });
+  });
+
+  describe('Multiple output proposals', function() {
+    it('should create, get, sign, and broadcast proposal', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockchainExplorerMock.setUtxo(x0, 1, 1);
+          var opts = {
+            type: 'multiple_outputs',
+            message: 'hello',
+            outputs: [{
+              amount: 10000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'world',
+            }, {
+              amount: 20000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: null,
+            }, {
+              amount: 30000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            }]
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[0].getTx(x.id, function(err, x2) {
+              should.not.exist(err);
+              x2.creatorName.should.equal('creator');
+              x2.message.should.equal('hello');
+              x2.fee.should.equal(10000);
+              x2.outputs[0].toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
+              x2.outputs[0].amount.should.equal(10000);
+              x2.outputs[0].message.should.equal('world');
+              x2.outputs[1].toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
+              x2.outputs[1].amount.should.equal(20000);
+              should.not.exist(x2.outputs[1].message);
+              x2.outputs[2].toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
+              x2.outputs[2].amount.should.equal(30000);
+              should.not.exist(x2.outputs[2].message);
+              clients[0].signTxProposal(x2, function(err, txp) {
+                should.not.exist(err);
+                txp.status.should.equal('accepted');
+                clients[0].broadcastTxProposal(txp, function(err, txp) {
+                  should.not.exist(err);
+                  txp.status.should.equal('broadcasted');
+                  txp.txid.should.equal((new Bitcore.Transaction(blockchainExplorerMock.lastBroadcasted)).id);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+
+  describe('Optional Proposal Fields', function() {
+    var opts;
+    beforeEach(function(done) {
+      opts = {
+        type: 'simple',
+        amount: 10000,
+        toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+        message: 'some message',
+        payProUrl: 'dummy'
+      };
+      done();
+    });
+
+    function doTest(opts, done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[1].getTx(x.id, function(err, x2) {
+              should.not.exist(err);
+              should.exist(x2);
+              clients[0].removeTxProposal(x2, function(err) {
+                done();
+              });
+            });
+          });
+        });
+      });
+    };
+
+    it('should pass with complete simple header', function(done) {
+      doTest(opts, done);
+    });
+    it('should pass with null message', function(done) {
+      opts.message = null;
+      doTest(opts, done);
+    });
+    it('should pass with no message', function(done) {
+      delete opts.message;
+      doTest(opts, done);
+    });
+    it('should pass with null payProUrl', function(done) {
+      opts.payProUrl = '';
+      doTest(opts, done);
+    });
+    it('should pass with no payProUrl', function(done) {
+      delete opts.payProUrl;
+      doTest(opts, done);
+    });
+    it('should pass with complete multi-output header', function(done) {
+      opts.type = 'multiple_outputs';
+      opts.outputs = [{
+        toAddress: opts.toAddress,
+        amount: opts.amount,
+        message: opts.message
+      }];
+      delete opts.toAddress;
+      delete opts.amount;
+      doTest(opts, done);
+    });
+    it('should pass with multi-output header and no message', function(done) {
+      opts.type = 'multiple_outputs';
+      opts.outputs = [{
+        toAddress: opts.toAddress,
+        amount: opts.amount
+      }];
+      delete opts.toAddress;
+      delete opts.amount;
+      doTest(opts, done);
     });
   });
 
@@ -1930,7 +2135,7 @@ describe('client API', function() {
             c.credentials.walletId.should.equal('e2c2d72024979ded');
             c.credentials.walletPrivKey.should.equal('c3463113c6e1d0fc2f2bd520f7d9d62f8e1fdcdd96005254571c64902aeb1648');
             c.credentials.sharedEncryptingKey.should.equal('x3D/7QHa4PkKMbSXEvXwaw==');
-            // TODO? 
+            // TODO?
             // bal1.totalAmount.should.equal(18979980);
             done();
           });
