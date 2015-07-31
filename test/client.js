@@ -1171,7 +1171,8 @@ describe('client API', function() {
             }, {
               amount: 30000,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            }]
+            }],
+	    payProUrl: null
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
