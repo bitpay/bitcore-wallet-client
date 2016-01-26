@@ -2,7 +2,10 @@
 var Client = require('./lib');
 module.exports = Client;
 
-},{"./lib":10}],2:[function(require,module,exports){
+// Errors thrown by the library
+Client.errors = require('./lib/errors');
+
+},{"./lib":10,"./lib/errors":8}],2:[function(require,module,exports){
 (function (process,Buffer){
 /** @namespace Client.API */
 'use strict';
@@ -35,10 +38,7 @@ var log = require('./log');
 var Credentials = require('./credentials');
 var Verifier = require('./verifier');
 var Package = require('../package.json');
-var ClientError = require('./errors/clienterror');
-var Errors = require('./errors/errordefinitions');
-
-
+var Errors = require('./errors');
 
 var BASE_URL = 'http://localhost:3232/bws/api';
 
@@ -59,7 +59,6 @@ function API(opts) {
   this.baseHost = parsedUrl.protocol + '//' + parsedUrl.host;
   this.payProHttp = null; // Only for testing
   this.doNotVerifyPayPro = opts.doNotVerifyPayPro;
-
   this.timeout = opts.timeout || 50000;
 
 
@@ -134,7 +133,7 @@ API.prototype._initNotifications = function(opts) {
   self.notificationsIntervalId = setInterval(function() {
     self._fetchLatestNotifications(interval, function(err) {
       if (err) {
-        if (err.code == 'NOT_FOUND' || err.code == 'NOT_AUTHORIZED') {
+        if (err instanceof Errors.NOT_FOUND || err instanceof Errors.NOT_AUTHORIZED) {
           self._disposeNotifications();
         }
       }
@@ -249,12 +248,13 @@ API._parseError = function(body) {
   }
   var ret;
   if (body && body.code) {
-    ret = new ClientError(body.code, body.message);
+    if (Errors[body.code]) {
+      ret = new Errors[body.code];
+    } else {
+      ret = new Error(body.code);
+    }
   } else {
-    ret = {
-      code: 'ERROR',
-      error: body ? body.error : 'There was an unknown error processing the request',
-    };
+    ret = new Error(body.error || body);
   }
   log.error(ret);
   return ret;
@@ -390,7 +390,7 @@ API.prototype.export = function(opts) {
   output = JSON.stringify(c.toObj());
 
   return output;
-}
+};
 
 
 /**
@@ -407,7 +407,7 @@ API.prototype.import = function(str, opts) {
     var credentials = Credentials.fromObj(JSON.parse(str));
     this.credentials = credentials;
   } catch (ex) {
-    throw Errors.INVALID_BACKUP;
+    throw new Errors.INVALID_BACKUP;
   }
 };
 
@@ -423,17 +423,17 @@ API.prototype._import = function(cb) {
     if (!err) return cb(null, ret);
 
     // Is the error other than "copayer was not found"? || or no priv key.
-    if (err.code != 'NOT_AUTHORIZED' || self.isPrivKeyExternal())
+    if (err instanceof Errors.NOT_AUTHORIZED || self.isPrivKeyExternal())
       return cb(err);
 
     //Second option, lets try to add an access
     log.info('Copayer not found, trying to add access');
     self.addAccess({}, function(err) {
+      if (err) {
+        return cb(new Errors.WALLET_DOES_NOT_EXIST);
+      }
 
-      // it worked?
-      if (!err) self.openWallet(cb);
-
-      return cb(Errors.WALLET_DOES_NOT_EXIST)
+      self.openWallet(cb);
     });
   });
 };
@@ -457,7 +457,7 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
     this.credentials = Credentials.fromMnemonic(opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44);
   } catch (e) {
     log.info('Mnemonic error:', e);
-    return cb(Errors.INVALID_BACKUP);
+    return cb(new Errors.INVALID_BACKUP);
   };
 
   this._import(cb);
@@ -469,7 +469,7 @@ API.prototype.importFromExtendedPrivateKey = function(xPrivKey, cb) {
     this.credentials = Credentials.fromExtendedPrivateKey(xPrivKey);
   } catch (e) {
     log.info('xPriv error:', e);
-    return cb(Errors.INVALID_BACKUP);
+    return cb(new Errors.INVALID_BACKUP);
   };
 
   this._import(cb);
@@ -496,7 +496,7 @@ API.prototype.importFromExtendedPublicKey = function(xPubKey, source, entropySou
     this.credentials = Credentials.fromExtendedPublicKey(xPubKey, source, entropySourceHex, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44);
   } catch (e) {
     log.info('xPriv error:', e);
-    return cb(Errors.INVALID_BACKUP);
+    return cb(new Errors.INVALID_BACKUP);
   };
 
   this._import(cb);
@@ -560,7 +560,7 @@ API.prototype.buildTxFromPrivateKey = function(privateKey, destinationAddress, o
 
       var fee = opts.fee || 10000;
       var amount = _.sum(utxos, 'satoshis') - fee;
-      if (amount <= 0) return next(Errors.INSUFFICIENT_FUNDS);
+      if (amount <= 0) return next(new Errors.INSUFFICIENT_FUNDS);
 
       var tx;
       try {
@@ -577,7 +577,7 @@ API.prototype.buildTxFromPrivateKey = function(privateKey, destinationAddress, o
 
       } catch (ex) {
         log.error('Could not build transaction from private key', ex);
-        return next(Errors.COULD_NOT_BUILD_TRANSACTION);
+        return next(new Errors.COULD_NOT_BUILD_TRANSACTION);
       }
       return next(null, tx);
     }
@@ -612,7 +612,7 @@ API.prototype.openWallet = function(cb) {
 
     if (self.credentials.walletPrivKey) {
       if (!Verifier.checkCopayers(self.credentials, wallet.copayers)) {
-        return cb(Errors.SERVER_COMPROMISED);
+        return cb(new Errors.SERVER_COMPROMISED);
       }
     } else {
       // this should only happends in AIR-GAPPED flows
@@ -679,27 +679,21 @@ API.prototype._doRequest = function(method, url, args, cb) {
       depth: 10
     }));
     if (!res) {
-      return cb({
-        code: 'CONNECTION_ERROR',
-      });
+      return cb(new Errors.CONNECTION_ERROR);
     }
 
-    if (res.statusCode != 200) {
-      if (res.statusCode == 404)
-        return cb({
-          code: 'NOT_FOUND'
-        });
+    if (res.statusCode !== 200) {
+      if (res.statusCode === 404)
+        return cb(new Errors.NOT_FOUND);
 
       if (!res.statusCode)
-        return cb({
-          code: 'CONNECTION_ERROR',
-        });
+        return cb(new Errors.CONNECTION_ERROR);
 
       return cb(API._parseError(body));
     }
 
     if (body === '{"error":"read ECONNRESET"}')
-      return cb(JSON.parse(body));
+      return cb(new Errors.ECONNRESET_ERROR(JSON.parse(body)));
 
     return cb(null, body, res.header);
   });
@@ -886,6 +880,58 @@ API.prototype._signTxp = function(txp) {
   return API.signTxp(txp, this.credentials.getDerivedXPrivKey());
 };
 
+API.prototype._getCurrentSignatures = function(txp) {
+  var acceptedActions = _.filter(txp.actions, {
+    type: 'accept'
+  });
+
+  return _.map(acceptedActions, function(x) {
+    return {
+      signatures: x.signatures,
+      xpub: x.xpub,
+    };
+  });
+};
+
+API.prototype._addSignaturesToBitcoreTx = function(txp, t, signatures, xpub) {
+  if (signatures.length != txp.inputs.length)
+    throw new Error('Number of signatures does not match number of inputs');
+
+  var i = 0,
+    x = new Bitcore.HDPublicKey(xpub);
+
+  _.each(signatures, function(signatureHex) {
+    var input = txp.inputs[i];
+    try {
+      var signature = Bitcore.crypto.Signature.fromString(signatureHex);
+      var pub = x.derive(txp.inputPaths[i]).publicKey;
+      var s = {
+        inputIndex: i,
+        signature: signature,
+        sigtype: Bitcore.crypto.Signature.SIGHASH_ALL,
+        publicKey: pub,
+      };
+      t.inputs[i].addSignature(t, s);
+      i++;
+    } catch (e) {};
+  });
+
+  if (i != txp.inputs.length)
+    throw new Error('Wrong signatures');
+};
+
+
+API.prototype._applyAllSignatures = function(txp, t) {
+  var self = this;
+
+  $.checkState(txp.status == 'accepted');
+
+  var sigs = self._getCurrentSignatures(txp);
+  _.each(sigs, function(x) {
+    self._addSignaturesToBitcoreTx(txp, t, x.signatures, x.xpub);
+  });
+};
+
 /**
  * Join
  * @private
@@ -905,7 +951,7 @@ API.prototype._doJoinWallet = function(walletId, walletPrivKey, xPubKey, request
 
   // Adds encrypted walletPrivateKey to CustomData
   opts.customData = opts.customData || {};
-  opts.customData.walletPrivKey = walletPrivKey.toString();;
+  opts.customData.walletPrivKey = walletPrivKey.toString();
   var encCustomData = Utils.encryptMessage(JSON.stringify(opts.customData),
     this.credentials.personalEncryptingKey);
 
@@ -1141,7 +1187,7 @@ API.prototype.joinWallet = function(secret, copayerName, opts, cb) {
   if (!cb) {
     cb = opts;
     opts = {};
-    log.warn('DEPRECATED WARN: joinWallet should receive 4 parameters.')
+    log.warn('DEPRECATED WARN: joinWallet should receive 4 parameters.');
   }
 
   opts = opts || {};
@@ -1206,7 +1252,7 @@ API.prototype.recreateWallet = function(cb) {
 
     self._doPostRequest('/v2/wallets/', args, function(err, body) {
       if (err) {
-        if (err.code != 'WALLET_ALREADY_EXISTS')
+        if (!(err instanceof Errors.WALLET_ALREADY_EXISTS))
           return cb(err);
 
         return self.addAccess({}, function(err) {
@@ -1228,7 +1274,7 @@ API.prototype.recreateWallet = function(cb) {
           supportBIP44AndP2PKH: supportBIP44AndP2PKH,
         }, function(err) {
           //Ignore error is copayer already in wallet
-          if (err && err.code == 'COPAYER_IN_WALLET') return next();
+          if (err && err instanceof Errors.COPAYER_IN_WALLET) return next();
           return next(err);
         });
       }, cb);
@@ -1379,7 +1425,7 @@ API.prototype._computeProposalSignature = function(args) {
     hash = Utils.getProposalHash(args.toAddress, args.amount, args.message || null, args.payProUrl || null);
   }
   return Utils.signMessage(hash, this.credentials.requestPrivKey);
-}
+};
 
 /**
  * fetchPayPro
@@ -1400,7 +1446,7 @@ API.prototype.fetchPayPro = function(opts, cb) {
     http: this.payProHttp,
   }, function(err, paypro) {
     if (err)
-      return cb(err || 'Could not fetch PayPro request');
+      return cb(err);
 
     return cb(null, paypro);
   });
@@ -1506,7 +1552,7 @@ API.prototype.createAddress = function(opts, cb) {
     if (err) return cb(err);
 
     if (!Verifier.checkAddress(self.credentials, address)) {
-      return cb(Errors.SERVER_COMPROMISED);
+      return cb(new Errors.SERVER_COMPROMISED);
     }
 
     return cb(null, address);
@@ -1547,7 +1593,7 @@ API.prototype.getMainAddresses = function(opts, cb) {
         return !Verifier.checkAddress(self.credentials, address);
       });
       if (fake)
-        return cb(Errors.SERVER_COMPROMISED);
+        return cb(new Errors.SERVER_COMPROMISED);
     }
     return cb(null, addresses);
   });
@@ -1606,7 +1652,7 @@ API.prototype.getTxProposals = function(opts, cb) {
       },
       function(isLegit) {
         if (!isLegit)
-          return cb(Errors.SERVER_COMPROMISED);
+          return cb(new Errors.SERVER_COMPROMISED);
 
         var result;
         if (opts.forAirGapped) {
@@ -1666,7 +1712,7 @@ API.prototype.signTxProposal = function(txp, cb) {
     });
 
     if (!isLegit)
-      return cb(Errors.SERVER_COMPROMISED);
+      return cb(new Errors.SERVER_COMPROMISED);
 
     var signatures = txp.signatures || self._signTxp(txp);
 
@@ -1680,7 +1726,7 @@ API.prototype.signTxProposal = function(txp, cb) {
       self._processTxps([txp]);
       return cb(null, txp);
     });
-  })
+  });
 };
 
 /**
@@ -1698,10 +1744,10 @@ API.prototype.signTxProposalFromAirGapped = function(txp, encryptedPkr, m, n) {
   var self = this;
 
   if (!self.canSign())
-    throw Errors.MISSING_PRIVATE_KEY;
+    throw new Errors.MISSING_PRIVATE_KEY;
 
   if (self.isPrivKeyEncrypted())
-    throw Errors.ENCRYPTED_PRIVATE_KEY;
+    throw new Errors.ENCRYPTED_PRIVATE_KEY;
 
   var publicKeyRing;
   try {
@@ -1802,13 +1848,19 @@ API.prototype.broadcastTxProposal = function(txp, cb) {
     if (paypro) {
 
       var t = API.buildTx(txp);
+      self._applyAllSignatures(txp, t);
+
       PayPro.send({
         http: self.payProHttp,
         url: txp.payProUrl,
         amountSat: txp.amount,
         refundAddr: txp.changeAddress.address,
         merchant_data: paypro.merchant_data,
-        rawTx: t.uncheckedSerialize(),
+        rawTx: t.serialize({
+          disableSmallFees: true,
+          disableLargeFees: true,
+          disableDustOutputs: true
+        }),
       }, function(err, ack, memo) {
         if (err) return cb(err);
         self._doBroadcast(txp, function(err, txp) {
@@ -1966,10 +2018,10 @@ API.prototype.getWalletIdsFromOldCopay = function(username, password, blob) {
 API.prototype.createWalletFromOldCopay = function(username, password, blob, cb) {
   var self = this;
   var w = this._oldCopayDecrypt(username, password, blob);
-  if (!w) return cb('Could not decrypt');
+  if (!w) return cb(new Error('Could not decrypt'));
 
   if (w.publicKeyRing.copayersExtPubKeys.length != w.opts.totalCopayers)
-    return cb('Wallet is incomplete, cannot be imported');
+    return cb(new Error('Wallet is incomplete, cannot be imported'));
 
   this.credentials = Credentials.fromOldCopayWallet(w);
   this.recreateWallet(cb);
@@ -2011,11 +2063,68 @@ API.prototype.addAccess = function(opts, cb) {
   });
 };
 
+/**
+ * Returns exchange rate for the specified currency & timestamp.
+ * @param {Object} opts
+ * @param {string} opts.code - Currency ISO code.
+ * @param {Date} [opts.ts] - A timestamp to base the rate on (default Date.now()).
+ * @param {String} [opts.provider] - A provider of exchange rates (default 'BitPay').
+ * @returns {Object} rates - The exchange rate.
+ */
+API.prototype.getFiatRate = function(opts, cb) {
+  $.checkState(this.credentials && this.credentials.isComplete());
+  $.checkArgument(cb);
+
+  var self = this;
+
+  var opts = opts || {};
+
+  var args = [];
+  if (opts.ts) args.push('ts=' + opts.ts);
+  if (opts.provider) args.push('provider=' + opts.provider);
+  var qs = '';
+  if (args.length > 0) {
+    qs = '?' + args.join('&');
+  }
+
+  self._doGetRequest('/v1/fiatrates/' + opts.code + '/' + qs, function(err, rates) {
+    if (err) return cb(err);
+    return cb(null, rates);
+  });
+}
+
+/**
+ * Returns subscription status.
+ * @param {Object} opts
+ * @param {String} opts.type - Device type (ios or android).
+ * @param {String} opts.token - Device token.
+ * @returns {Object} response - Status of subscription.
+ */
+API.prototype.pushNotificationsSubscribe = function(opts, cb) {
+  var url = '/v1/pushnotifications/subscriptions/';
+  this._doPostRequest(url, opts, function(err, response) {
+    if (err) return cb(err);
+    return cb(null, response);
+  });
+};
+
+/**
+ * Returns unsubscription status.
+ * @param {String} token - Device token
+ * @return {Callback} cb - Return error if exists
+ */
+API.prototype.pushNotificationsUnsubscribe = function(cb) {
+  var url = '/v1/pushnotifications/subscriptions/';
+  this._doDeleteRequest(url, function(err) {
+    if (err) return cb(err);
+    return cb(null);
+  });
+};
 
 module.exports = API;
 
 }).call(this,require('_process'),require("buffer").Buffer)
-},{"../package.json":527,"./common":5,"./credentials":7,"./errors/clienterror":8,"./errors/errordefinitions":9,"./log":11,"./paypro":12,"./verifier":13,"_process":399,"async":14,"bip38":15,"bitcore-lib":64,"browser-request":176,"buffer":193,"events":389,"json-stable-stringify":422,"lodash":426,"preconditions":427,"querystring":403,"request":432,"sjcl":526,"url":417,"util":419}],3:[function(require,module,exports){
+},{"../package.json":527,"./common":5,"./credentials":7,"./errors":8,"./log":11,"./paypro":12,"./verifier":13,"_process":399,"async":14,"bip38":15,"bitcore-lib":64,"browser-request":176,"buffer":193,"events":389,"json-stable-stringify":422,"lodash":426,"preconditions":427,"querystring":403,"request":432,"sjcl":526,"url":417,"util":419}],3:[function(require,module,exports){
 'use strict';
 
 var Constants = {};
@@ -2684,45 +2793,151 @@ module.exports = Credentials;
 },{"./common":5,"bitcore-lib":64,"bitcore-mnemonic":142,"buffer":193,"lodash":426,"preconditions":427,"sjcl":526}],8:[function(require,module,exports){
 'use strict';
 
-function ClientError(code, message) {
-  this.code = code;
-  this.message = message;
-};
-
-ClientError.prototype.toString = function() {
-  return '<ClientError:' + this.code + ' ' + this.message + '>';
-};
-
-module.exports = ClientError;
-
-},{}],9:[function(require,module,exports){
-'use strict';
-
 var _ = require('lodash');
 
-var ClientError = require('./clienterror');
-
-var errors = {
-  INVALID_BACKUP: 'Invalid Backup',
-  WALLET_DOES_NOT_EXIST: 'Wallet does not exist. Need to recreate',
-  MISSING_PRIVATE_KEY: 'Missing private keys to sign',
-  ENCRYPTED_PRIVATE_KEY: 'Private key is encrypted, cannot sign',
-  SERVER_COMPROMISED: 'Server response could not be verified',
-  COULD_NOT_BUILD_TRANSACTION: 'Could not build transaction',
-  INSUFFICIENT_FUNDS: 'Insufficient funds',
+function format(message, args) {
+  return message
+    .replace('{0}', args[0])
+    .replace('{1}', args[1])
+    .replace('{2}', args[2]);
+}
+var traverseNode = function(parent, errorDefinition) {
+  var NodeError = function() {
+    if (_.isString(errorDefinition.message)) {
+      this.message = format(errorDefinition.message, arguments);
+    } else if (_.isFunction(errorDefinition.message)) {
+      this.message = errorDefinition.message.apply(null, arguments);
+    } else {
+      throw new Error('Invalid error definition for ' + errorDefinition.name);
+    }
+    this.stack = this.message + '\n' + (new Error()).stack;
+  };
+  NodeError.prototype = Object.create(parent.prototype);
+  NodeError.prototype.name = parent.prototype.name + errorDefinition.name;
+  parent[errorDefinition.name] = NodeError;
+  if (errorDefinition.errors) {
+    childDefinitions(NodeError, errorDefinition.errors);
+  }
+  return NodeError;
 };
 
-var errorObjects = _.zipObject(_.map(errors, function(msg, code) {
-  return [code, new ClientError(code, msg)];
-}));
+/* jshint latedef: false */
+var childDefinitions = function(parent, childDefinitions) {
+  _.each(childDefinitions, function(childDefinition) {
+    traverseNode(parent, childDefinition);
+  });
+};
+/* jshint latedef: true */
 
-errorObjects.codes = _.mapValues(errors, function(v, k) {
-  return k;
-});
+var traverseRoot = function(parent, errorsDefinition) {
+  childDefinitions(parent, errorsDefinition);
+  return parent;
+};
 
-module.exports = errorObjects;
 
-},{"./clienterror":8,"lodash":426}],10:[function(require,module,exports){
+var bwc = {};
+bwc.Error = function() {
+  this.message = 'Internal error';
+  this.stack = this.message + '\n' + (new Error()).stack;
+};
+bwc.Error.prototype = Object.create(Error.prototype);
+bwc.Error.prototype.name = 'bwc.Error';
+
+
+var data = require('./spec');
+traverseRoot(bwc.Error, data);
+
+module.exports = bwc.Error;
+
+module.exports.extend = function(spec) {
+  return traverseNode(bwc.Error, spec);
+};
+
+},{"./spec":9,"lodash":426}],9:[function(require,module,exports){
+'use strict';
+
+var errorSpec = [
+  {
+    name: 'INVALID_BACKUP',
+    message: 'Invalid Backup'
+  },
+  {
+    name: 'WALLET_DOES_NOT_EXIST',
+    message: 'Wallet does not exist. Need to recreate'
+  },
+  {
+    name: 'MISSING_PRIVATE_KEY',
+    message: 'Missing private keys to sign'
+  },
+  {
+    name: 'ENCRYPTED_PRIVATE_KEY',
+    message: 'Private key is encrypted, cannot sign'
+  },
+  {
+    name: 'SERVER_COMPROMISED',
+    message: 'Server response could not be verified'
+  },
+  {
+    name: 'COULD_NOT_BUILD_TRANSACTION',
+    message: 'Could not build transaction'
+  },
+  {
+    name: 'INSUFFICIENT_FUNDS',
+    message: 'Insufficient funds'
+  },
+  {
+    name: 'CONNECTION_ERROR',
+    message: 'connection error'
+  },
+  {
+    name: 'NOT_FOUND',
+    message: 'not found'
+  },
+  {
+    name: 'ECONNRESET_ERROR',
+    message: 'ECONNRESET, body: {0}'
+  },
+  {
+    name: 'BAD_RESPONSE_CODE',
+    message: 'bad response code, code: {0}, body: {1}'
+  },
+  {
+    name: 'WALLET_ALREADY_EXISTS',
+    message: 'the wallet already exists'
+  },
+  {
+    name: 'COPAYER_IN_WALLET',
+    message: 'copayer in wallet'
+  },
+  {
+    name: 'WALLET_FULL',
+    message: 'wallet if full'
+  },
+  {
+    name: 'WALLET_NOT_FOUND',
+    message: 'wallet not found'
+  },
+  {
+    name: 'INSUFFICIENT_FUNDS_FOR_FEE',
+    message: 'insufficient funds for fee'
+  },
+  {
+    name: 'LOCKED_FUNDS',
+    message: 'locked funds'
+  },
+  {
+    name: 'COPAYER_VOTED',
+    message: 'Copayer already voted on this transaction proposal'
+  },
+  {
+    name: 'NOT_AUTHORIZED',
+    message: 'Copayer not found'
+  }
+];
+
+module.exports = errorSpec;
+
+},{}],10:[function(require,module,exports){
 /**
  * The official client library for bitcore-wallet-service.
  * @module Client
@@ -2889,7 +3104,7 @@ PayPro._nodeRequest = function(opts, cb) {
 
   http[fn](opts, function(res) {
     if (res.statusCode != 200)
-      return cb('HTTP Request Error');
+      return cb(new Error('HTTP Request Error'));
 
     var data = []; // List of Buffer objects
     res.on("data", function(chunk) {
@@ -2933,7 +3148,7 @@ PayPro._browserRequest = function(opts, cb) {
     } else {
       status = xhr.statusText;
     }
-    return cb(status);
+    return cb(new Error(status));
   };
 
   if (req.body) {
@@ -2978,7 +3193,7 @@ PayPro.get = function(opts, cb) {
       // Verify the signature
       verified = request.verify(true);
     } catch (e) {
-      return cb('Could not parse payment protocol: ' + e)
+      return cb(new Error('Could not parse payment protocol: ' + e));
     }
 
     // Get the payment details
@@ -3042,12 +3257,15 @@ PayPro._getPayProRefundOutputs = function(addrStr, amount) {
 
   var output = new BitcorePayPro.Output();
   var addr = new Bitcore.Address(addrStr);
-  var hash = addr.toObject().hash;
 
-  var s = new Bitcore.Script();
-  s.add(Bitcore.Opcode.OP_HASH160)
-    .add(new Buffer(hash, 'hex'))
-    .add(Bitcore.Opcode.OP_EQUAL);
+  var s;
+  if (addr.isPayToPublicKeyHash()) {
+    s = Bitcore.Script.buildPublicKeyHashOut(addr);
+  } else if (addr.isPayToScriptHash()) {
+    s = Bitcore.Script.buildScriptHashOut(addr);
+  } else {
+    throw new Error('Unrecognized address type ' + addr.type);
+  }
 
   //  console.log('PayPro refund address set to:', addrStr,s);
   output.set('script', s.toBuffer());
@@ -3064,6 +3282,7 @@ PayPro._createPayment = function(merchant_data, rawTx, refundAddr, amountSat) {
     merchant_data = new Buffer(merchant_data);
     pay.set('merchant_data', merchant_data);
   }
+console.log('[paypro.js.194:rawTx:]',rawTx); //TODO
 
   var txBuf = new Buffer(rawTx, 'hex');
   pay.set('transactions', [txBuf]);
@@ -106993,7 +107212,7 @@ module.exports={
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "1.1.10",
+  "version": "1.5.0",
   "license": "MIT",
   "keywords": [
     "bitcoin",
@@ -107001,7 +107220,9 @@ module.exports={
     "multisig",
     "wallet",
     "client",
-    "bitcore"
+    "bitcore",
+    "BWS",
+    "BWC"
   ],
   "engine": "node >= 0.12.0",
   "main": "index.js",
@@ -107026,7 +107247,7 @@ module.exports={
     "sjcl": "^1.0.2"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "~1.3.1",
+    "bitcore-wallet-service": "~1.4.0",
     "browserify": "^9.0.3",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
