@@ -120,6 +120,7 @@ helpers.createAndJoinWallet = function(clients, m, n, opts, cb) {
     network: 'testnet',
     singleAddress: !!opts.singleAddress,
   }, function(err, secret) {
+console.log('err ++==========='+err);
     should.not.exist(err);
 
     if (n > 1) {
@@ -1470,6 +1471,7 @@ describe('client API', function() {
     beforeEach(function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].createAddress(function(err, x0) {
+console.log('err ==================' + err);
           should.not.exist(err);
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
@@ -1501,6 +1503,47 @@ describe('client API', function() {
           addr.length.should.equal(2);
           done();
         });
+      });
+    });
+  });
+
+  describe('#getAddressFromWallet', function() {
+    var address, credentials;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+        should.exist(w);
+        credentials = clients[0].credentials;
+        clients[0].createAddress(function(err, a) {
+          should.not.exist(err);
+          should.exist(a);
+          address = a.address;
+          done();
+        });
+      });
+    });
+
+    it('Should get an address from wallet', function(done) {
+      clients[0].getAddressFromWallet(credentials.walletId, address, function(err, a) {
+        should.not.exist(err);
+        a.address.should.equal(address);
+        done();
+      });
+    });
+    it('Should not get an address from wallet - bad address', function(done) {
+      clients[0].getAddressFromWallet(credentials.walletId, 'ABCD', function(err, a) {
+        should.not.exist(err);
+console.log('AJP ======== '+err);
+console.log('AJP ======== '+a);
+console.log('AJP ======== '+JSON.stringify(a));
+        a.should.equal(undefined);
+        done();
+      });
+    });
+    it('Should not get an address from wallet - bad wallet', function(done) {
+      clients[0].getAddressFromWallet('ABCD', address, function(err, a) {
+        should.not.exist(err);
+        a.should.equal(undefined);
+        done();
       });
     });
   });
