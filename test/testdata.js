@@ -1,3 +1,6 @@
+var Common = require('../lib/common');
+var Constants = Common.Constants;
+
 var history = [{
   txid: "0279ef7b21630f859deb723e28beac9e7011660bd1346c2da40321d2f7e34f04",
   vin: [{
@@ -85,7 +88,7 @@ var payProData = {
   time: 1427290483,
   toAddress: 'mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE',
   amount: 404500,
-  network: 'testnet',
+  network: Constants.TESTNET,
   domain: 'an.url.com',
   url: 'http://an.url.com/paypro',
   merchant_data: '{"invoiceId":"CibEJJtG1t9H77KmM61E2t","merchantId":"DGfuCDeofUnWjDmU7ELcEh"}',
