@@ -3704,7 +3704,7 @@ describe('client API', function() {
       describe('Non-compliant derivation', function() {
         function setup(done) {
           clients[0].createWallet('mywallet', 'creator', 1, 1, {
-            network: 'livenet'
+            network: Constants.LIVENET
           }, function(err) {
             should.not.exist(err);
             clients[0].createAddress(function(err, addr) {
@@ -3730,7 +3730,7 @@ describe('client API', function() {
         });
         it('should export & import with mnemonics + BWS', function(done) {
           clients[0].seedFromMnemonic('pink net pet stove boy receive task nephew book spawn pull regret', {
-            network: 'livenet',
+            network: Constants.LIVENET,
             nonCompliantDerivation: true,
           });
           clients[0].credentials.xPrivKey.toString().should.equal('xprv9s21ZrQH143K3E71Wm5nrxuMdqCTMG6AM5Xyp4dJ3ZkUj2gEpfifT5Hc1cfqnycKooRpzoH4gjmAKDmGGaH2k2cSe29EcQSarveq6STBZZW');
@@ -3739,7 +3739,7 @@ describe('client API', function() {
             importedClient = helpers.newClient(app);
             var spy = sinon.spy(importedClient, 'openWallet');
             importedClient.importFromMnemonic(clients[0].getMnemonic(), {
-              network: 'livenet',
+              network: Constants.LIVENET,
             }, function(err) {
               should.not.exist(err);
               spy.getCalls().length.should.equal(2);
@@ -3750,12 +3750,12 @@ describe('client API', function() {
 
         it('should check BWS once if specific derivation is not problematic', function(done) {
           clients[0].seedFromMnemonic('relax about label gentle insect cross summer helmet come price elephant seek', {
-            network: 'livenet',
+            network: Constants.LIVENET,
           });
           importedClient = helpers.newClient(app);
           var spy = sinon.spy(importedClient, 'openWallet');
           importedClient.importFromMnemonic(clients[0].getMnemonic(), {
-            network: 'livenet',
+            network: Constants.LIVENET,
           }, function(err) {
             should.exist(err);
             err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
@@ -3766,12 +3766,12 @@ describe('client API', function() {
         });
         it('should export & import with xprivkey + BWS', function(done) {
           clients[0].seedFromMnemonic('relax about label gentle insect cross summer helmet come price elephant seek', {
-            network: 'livenet',
+            network: Constants.LIVENET,
           });
           importedClient = helpers.newClient(app);
           var spy = sinon.spy(importedClient, 'openWallet');
           importedClient.importFromExtendedPrivateKey(clients[0].getKeys().xPrivKey, {
-            network: 'livenet',
+            network: Constants.LIVENET,
           }, function(err) {
             should.exist(err);
             err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
@@ -5230,7 +5230,7 @@ describe('client API', function() {
       var client = helpers.newClient(app);
       client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00');
       client.createWallet('mywallet', 'creator', 1, 1, {
-        network: 'livenet'
+        network: Constants.LIVENET
       }, function(err) {
         should.not.exist(err);
         var c = client.credentials;

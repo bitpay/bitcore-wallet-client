@@ -192,19 +192,19 @@ describe('Credentials', function() {
     describe('Compliant derivation', function() {
       it('Should create compliant base address derivation key from mnemonic', function() {
         var words = "shoulder sphere pull seven top much black copy labor dress depth unit";
-        var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP44');
+        var c = Credentials.fromMnemonic(Constants.LIVENET, words, '', 0, 'BIP44');
         c.xPrivKey.should.equal('xprv9s21ZrQH143K3WoNK8dVjQJpcXhqfwyuBTpuZdc1ZVa9yWW2i7TmM4TLyfPrSKXctQuLgbg3U1WJmodK9yWM26JWeuh2vhT6bmsPPie688n');
         c.xPubKey.should.equal('xpub6DVMaW3r1CcZcsUazSHspjRfZZJzZG3N7GRL4DciY54Z8M4KmRSDrq2hd75VzxKZDXPu4EKiAwCGwiXMxec2pq6oVgtZYxQHSrgtxksWehx');
       });
 
       it('Should create compliant request key from mnemonic', function() {
         var words = "pool stomach bridge series powder mammal betray slogan pass roast neglect reunion";
-        var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP44');
+        var c = Credentials.fromMnemonic(Constants.LIVENET, words, '', 0, 'BIP44');
         c.xPrivKey.should.equal('xprv9s21ZrQH143K3ZMudFRXpEwftifDuJkjLKnCtk26pXhxQuK8bCnytJuUTGkfvaibnCxPQQ9xToUtDAZkJqjm3W62GBXXr7JwhiAz1XWgTUJ');
         c.requestPrivKey.should.equal('7582efa9b71aefa831823592d753704cba9648b810b14b77ee078dfe8b730157');
       });
       it('should accept non-compliant derivation as a parameter when importing', function() {
-        var c = Credentials.fromMnemonic('testnet', 'level unusual burger hole call main basic flee drama diary argue legal', '', 0, 'BIP44', {
+        var c = Credentials.fromMnemonic(Constants.TESTNET, 'level unusual burger hole call main basic flee drama diary argue legal', '', 0, 'BIP44', {
           nonCompliantDerivation: true
         });
         c.xPrivKey.should.equal('tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k');
@@ -225,7 +225,7 @@ describe('Credentials', function() {
     });
 
     it('should assume derivation compliance on new credentials', function() {
-      var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+      var c = Credentials.createWithMnemonic(Constants.LIVENET, '', 'en', 0);
       c.compliantDerivation.should.be.true;
       var xPrivKey = c.getDerivedXPrivKey();
       should.exist(xPrivKey);
