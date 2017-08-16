@@ -39,7 +39,7 @@ var client = new Client({
   verbose: false,
 });
 
-client.createWallet("My Wallet", "Irene", 2, 2, {network: 'testnet'}, function(err, secret) {
+client.createWallet("My Wallet", "Irene", 2, 2, {network: 'testnet/btc'}, function(err, secret) {
   if (err) {
     console.log('error: ',err);
     return
@@ -163,7 +163,7 @@ Seed from random
 
 **opts**: `Object`, Seed from random
 
-**opts.network**: `String`, default 'livenet'
+**opts.network**: `String`, default 'livenet/btc'
 
 
 ### API.seedFromRandomWithMnemonic(opts, opts.network, opts.passphrase, opts.language, opts.account)
@@ -174,7 +174,7 @@ Seed from random with mnemonic
 
 **opts**: `Object`, Seed from random with mnemonic
 
-**opts.network**: `String`, default 'livenet'
+**opts.network**: `String`, default 'livenet/btc'
 
 **opts.passphrase**: `String`, Seed from random with mnemonic
 
@@ -208,7 +208,7 @@ Can throw an error if mnemonic is invalid
 **opts**: `Object`, Seed from Mnemonics (language autodetected)
 Can throw an error if mnemonic is invalid
 
-**opts.network**: `String`, default 'livenet'
+**opts.network**: `String`, default 'livenet/btc'
 
 **opts.passphrase**: `String`, Seed from Mnemonics (language autodetected)
 Can throw an error if mnemonic is invalid
@@ -279,7 +279,7 @@ Can throw an error if mnemonic is invalid
 **opts**: `Object`, Import from Mnemonics (language autodetected)
 Can throw an error if mnemonic is invalid
 
-**opts.network**: `String`, default 'livenet'
+**opts.network**: `String`, default 'livenet/btc'
 
 **opts.passphrase**: `String`, Import from Mnemonics (language autodetected)
 Can throw an error if mnemonic is invalid
@@ -396,7 +396,7 @@ Get current fee levels for the specified network
 
 **Parameters**
 
-**network**: `string`, 'livenet' (default) or 'testnet'
+**network**: `string`, 'livenet/btc' (default) or 'testnet/btc'
 
 **cb**: `Callback`, Get current fee levels for the specified network
 
@@ -427,7 +427,7 @@ Create a wallet.
 
 **opts**: `object`, (optional: advanced options)
 
-**opts.network**: `string`, 'livenet' or 'testnet'
+**opts.network**: `string`, 'livenet/btc' or 'testnet/btc'
 
 **opts.walletPrivKey**: `String`, set a walletPrivKey (instead of random)
 

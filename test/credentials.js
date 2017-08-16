@@ -13,7 +13,7 @@ describe('Credentials', function() {
 
   describe('#create', function() {
     it('Should create', function() {
-      var c = Credentials.create('livenet');
+      var c = Credentials.create(Constants.LIVENET);
       should.exist(c.xPrivKey);
       should.exist(c.copayerId);
     });
@@ -21,7 +21,7 @@ describe('Credentials', function() {
     it('Should create random credentials', function() {
       var all = {};
       for (var i = 0; i < 10; i++) {
-        var c = Credentials.create('livenet');
+        var c = Credentials.create(Constants.LIVENET);
         var exist = all[c.xPrivKey];
         should.not.exist(exist);
         all[c.xPrivKey] = 1;
@@ -31,18 +31,18 @@ describe('Credentials', function() {
 
   describe('#getBaseAddressDerivationPath', function() {
     it('should return path for livenet', function() {
-      var c = Credentials.create('livenet');
+      var c = Credentials.create(Constants.LIVENET);
       var path = c.getBaseAddressDerivationPath();
       path.should.equal("m/44'/0'/0'");
     });
     it('should return path for testnet account 2', function() {
-      var c = Credentials.create('testnet');
+      var c = Credentials.create(Constants.TESTNET);
       c.account = 2;
       var path = c.getBaseAddressDerivationPath();
       path.should.equal("m/44'/1'/2'");
     });
     it('should return path for BIP45', function() {
-      var c = Credentials.create('livenet');
+      var c = Credentials.create(Constants.LIVENET);
       c.derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP45;
       var path = c.getBaseAddressDerivationPath();
       path.should.equal("m/45'");
@@ -99,7 +99,7 @@ describe('Credentials', function() {
       c.xPrivKey.should.equal('xprv9s21ZrQH143K2TjT3rF4m5AJcMvCetfQbVjFEx1Rped8qzcMJwbqxv21k3ftL69z7n3gqvvHthkdzbW14gxEFDYQdrRQMub3XdkJyt3GGGc');
       c.xPubKey.should.equal('xpub6DUean44k773kxbUq8QpSmAPFaNCpk5AzrxbFRAMsNCZBGD15XQVnRJCgNd8GtJVmDyDZh89NPZz1XPQeX5w6bAdLGfSTUuPDEQwBgKxfh1');
       c.copayerId.should.equal('bad66ef88ad8dec08e36d576c29b4f091d30197f04e166871e64bf969d08a958');
-      c.network.should.equal('livenet');
+      c.network.should.equal(Constants.LIVENET);
       c.personalEncryptingKey.should.equal('M4MTmfRZaTtX6izAAxTpJg==');
     });
     describe('Compliant derivation', function() {
@@ -130,9 +130,9 @@ describe('Credentials', function() {
   describe('#fromMnemonic', function() {
     it('Should create credentials from mnemonic BIP44', function() {
       var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-      var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP44');
+      var c = Credentials.fromMnemonic(Constants.LIVENET, words, '', 0, 'BIP44');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
-      c.network.should.equal('livenet');
+      c.network.should.equal(Constants.LIVENET);
       c.account.should.equal(0);
       c.derivationStrategy.should.equal('BIP44');
       c.xPubKey.should.equal('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj');
@@ -141,9 +141,9 @@ describe('Credentials', function() {
 
     it('Should create credentials from mnemonic BIP48', function() {
       var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-      var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP48');
+      var c = Credentials.fromMnemonic(Constants.LIVENET, words, '', 0, 'BIP48');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
-      c.network.should.equal('livenet');
+      c.network.should.equal(Constants.LIVENET);
       c.account.should.equal(0);
       c.derivationStrategy.should.equal('BIP48');
       c.xPubKey.should.equal('xpub6CKZtUaK1YHpQbg6CLaGRmsMKLQB1iKzsvmxtyHD6X7gzLqCB2VNZYd1XCxrccQnE8hhDxtYbR1Sakkvisy2J4CcTxWeeGjmkasCoNS9vZm');
@@ -152,7 +152,7 @@ describe('Credentials', function() {
 
     it('Should create credentials from mnemonic account 1', function() {
       var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-      var c = Credentials.fromMnemonic('livenet', words, '', 1, 'BIP44');
+      var c = Credentials.fromMnemonic(Constants.LIVENET, words, '', 1, 'BIP44');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
       c.account.should.equal(1);
       c.xPubKey.should.equal('xpub6BosfCnifzxcJJ1wYuntGJfF2zPJkDeG9ELNHcKNjezuea4tumswN9sH1psMdSVqCMoJC21Bv8usSeqSP4Sp1tLzW7aY59fGn9GCYzx5UTo');
@@ -161,50 +161,50 @@ describe('Credentials', function() {
 
     it('Should create credentials from mnemonic with undefined/null passphrase', function() {
       var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-      var c = Credentials.fromMnemonic('livenet', words, undefined, 0, 'BIP44');
+      var c = Credentials.fromMnemonic(Constants.LIVENET, words, undefined, 0, 'BIP44');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
-      c = Credentials.fromMnemonic('livenet', words, null, 0, 'BIP44');
+      c = Credentials.fromMnemonic(Constants.LIVENET, words, null, 0, 'BIP44');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
     });
 
     it('Should create credentials from mnemonic and passphrase', function() {
       var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-      var c = Credentials.fromMnemonic('livenet', words, 'húngaro', 0, 'BIP44');
+      var c = Credentials.fromMnemonic(Constants.LIVENET, words, 'húngaro', 0, 'BIP44');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K2LkGEPHqW8w5vMJ3giizin94rFpSM5Ys5KhDaP7Hde3rEuzC7VpZDtNX643bJdvhHnkbhKMNmLx3Yi6H8WEsHBBox3qbpqq');
     });
 
     it('Should create credentials from mnemonic and passphrase for testnet account 2', function() {
       var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-      var c = Credentials.fromMnemonic('testnet', words, 'húngaro', 2, 'BIP44');
+      var c = Credentials.fromMnemonic(Constants.TESTNET, words, 'húngaro', 2, 'BIP44');
       c.xPrivKey.should.equal('tprv8ZgxMBicQKsPd9yntx9LfnZ5EUiFvEm14L4BigEtq43LrvSJZkT39PRJA69r7sCsbKuJ69fMTzWVkeJLpXhKaQDe5MJanrxvCGwEPnNxN85');
-      c.network.should.equal('testnet');
+      c.network.should.equal(Constants.TESTNET);
       c.xPubKey.should.equal('tpubDCoAP4Ut9MXK5CakPFPudKAP4yCw6Xr7uzV2129v2LTa3eBoPoUGMqi2y3kmh83oRGX93m7EehB6LWan5GTSVD8yUnV5Jc7Kjzfa3Zsf8nE');
       c.getBaseAddressDerivationPath().should.equal("m/44'/1'/2'");
     });
 
     it('Should create credentials from mnemonic (ES)', function() {
       var words = 'afirmar diseño hielo fideo etapa ogro cambio fideo toalla pomelo número buscar';
-      var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP44');
+      var c = Credentials.fromMnemonic(Constants.LIVENET, words, '', 0, 'BIP44');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3H3WtXCn9nHtpi7Fz1ZE9VJErWErhrGL4hV1cApFVo3t4aANoPF7ufcLLWqN168izu3xGQdLaGxXG2qYZF8wWQGNWnuSSon');
-      c.network.should.equal('livenet');
+      c.network.should.equal(Constants.LIVENET);
     });
 
     describe('Compliant derivation', function() {
       it('Should create compliant base address derivation key from mnemonic', function() {
         var words = "shoulder sphere pull seven top much black copy labor dress depth unit";
-        var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP44');
+        var c = Credentials.fromMnemonic(Constants.LIVENET, words, '', 0, 'BIP44');
         c.xPrivKey.should.equal('xprv9s21ZrQH143K3WoNK8dVjQJpcXhqfwyuBTpuZdc1ZVa9yWW2i7TmM4TLyfPrSKXctQuLgbg3U1WJmodK9yWM26JWeuh2vhT6bmsPPie688n');
         c.xPubKey.should.equal('xpub6DVMaW3r1CcZcsUazSHspjRfZZJzZG3N7GRL4DciY54Z8M4KmRSDrq2hd75VzxKZDXPu4EKiAwCGwiXMxec2pq6oVgtZYxQHSrgtxksWehx');
       });
 
       it('Should create compliant request key from mnemonic', function() {
         var words = "pool stomach bridge series powder mammal betray slogan pass roast neglect reunion";
-        var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP44');
+        var c = Credentials.fromMnemonic(Constants.LIVENET, words, '', 0, 'BIP44');
         c.xPrivKey.should.equal('xprv9s21ZrQH143K3ZMudFRXpEwftifDuJkjLKnCtk26pXhxQuK8bCnytJuUTGkfvaibnCxPQQ9xToUtDAZkJqjm3W62GBXXr7JwhiAz1XWgTUJ');
         c.requestPrivKey.should.equal('7582efa9b71aefa831823592d753704cba9648b810b14b77ee078dfe8b730157');
       });
       it('should accept non-compliant derivation as a parameter when importing', function() {
-        var c = Credentials.fromMnemonic('testnet', 'level unusual burger hole call main basic flee drama diary argue legal', '', 0, 'BIP44', {
+        var c = Credentials.fromMnemonic(Constants.TESTNET, 'level unusual burger hole call main basic flee drama diary argue legal', '', 0, 'BIP44', {
           nonCompliantDerivation: true
         });
         c.xPrivKey.should.equal('tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k');
@@ -217,29 +217,29 @@ describe('Credentials', function() {
 
   describe('#createWithMnemonic', function() {
     it('Should create credentials with mnemonic', function() {
-      var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+      var c = Credentials.createWithMnemonic(Constants.LIVENET, '', 'en', 0);
       should.exist(c.mnemonic);
       c.mnemonic.split(' ').length.should.equal(12);
-      c.network.should.equal('livenet');
+      c.network.should.equal(Constants.LIVENET);
       c.account.should.equal(0);
     });
 
     it('should assume derivation compliance on new credentials', function() {
-      var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+      var c = Credentials.createWithMnemonic(Constants.LIVENET, '', 'en', 0);
       c.compliantDerivation.should.be.true;
       var xPrivKey = c.getDerivedXPrivKey();
       should.exist(xPrivKey);
     });
 
     it('Should create credentials with mnemonic (testnet)', function() {
-      var c = Credentials.createWithMnemonic('testnet', '', 'en', 0);
+      var c = Credentials.createWithMnemonic(Constants.TESTNET, '', 'en', 0);
       should.exist(c.mnemonic);
       c.mnemonic.split(' ').length.should.equal(12);
-      c.network.should.equal('testnet');
+      c.network.should.equal(Constants.TESTNET);
     });
 
     it('Should return and clear mnemonic', function() {
-      var c = Credentials.createWithMnemonic('testnet', '', 'en', 0);
+      var c = Credentials.createWithMnemonic(Constants.TESTNET, '', 'en', 0);
       should.exist(c.mnemonic);
       c.getMnemonic().split(' ').length.should.equal(12);
       c.clearMnemonic();
@@ -250,13 +250,13 @@ describe('Credentials', function() {
   describe('#createWithMnemonic #fromMnemonic roundtrip', function() {
     _.each(['en', 'es', 'ja', 'zh', 'fr'], function(lang) {
       it('Should verify roundtrip create/from with ' + lang + '/passphrase', function() {
-        var c = Credentials.createWithMnemonic('testnet', 'holamundo', lang, 0);
+        var c = Credentials.createWithMnemonic(Constants.TESTNET, 'holamundo', lang, 0);
         should.exist(c.mnemonic);
         var words = c.mnemonic;
         var xPriv = c.xPrivKey;
         var path = c.getBaseAddressDerivationPath();
 
-        var c2 = Credentials.fromMnemonic('testnet', words, 'holamundo', 0, 'BIP44');
+        var c2 = Credentials.fromMnemonic(Constants.TESTNET, words, 'holamundo', 0, 'BIP44');
         should.exist(c2.mnemonic);
         words.should.be.equal(c2.mnemonic);
         c2.xPrivKey.should.equal(c.xPrivKey);
@@ -266,13 +266,13 @@ describe('Credentials', function() {
     });
 
     it('Should fail roundtrip create/from with ES/passphrase with wrong passphrase', function() {
-      var c = Credentials.createWithMnemonic('testnet', 'holamundo', 'es', 0);
+      var c = Credentials.createWithMnemonic(Constants.TESTNET, 'holamundo', 'es', 0);
       should.exist(c.mnemonic);
       var words = c.mnemonic;
       var xPriv = c.xPrivKey;
       var path = c.getBaseAddressDerivationPath();
 
-      var c2 = Credentials.fromMnemonic('testnet', words, 'chaumundo', 0, 'BIP44');
+      var c2 = Credentials.fromMnemonic(Constants.TESTNET, words, 'chaumundo', 0, 'BIP44');
       c2.network.should.equal(c.network);
       c2.getBaseAddressDerivationPath().should.equal(path);
       c2.xPrivKey.should.not.equal(c.xPrivKey);
@@ -282,7 +282,7 @@ describe('Credentials', function() {
   describe('Private key encryption', function() {
     describe('#encryptPrivateKey', function() {
       it('should encrypt private key and remove cleartext', function() {
-        var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+        var c = Credentials.createWithMnemonic(Constants.LIVENET, '', 'en', 0);
         c.encryptPrivateKey('password');
         c.isPrivKeyEncrypted().should.be.true;
         should.exist(c.xPrivKeyEncrypted);
@@ -291,7 +291,7 @@ describe('Credentials', function() {
         should.not.exist(c.mnemonic);
       });
       it('should fail to encrypt private key if already encrypted', function() {
-        var c = Credentials.create('livenet');
+        var c = Credentials.create(Constants.LIVENET);
         c.encryptPrivateKey('password');
         var err;
         try {
@@ -304,7 +304,7 @@ describe('Credentials', function() {
     });
     describe('#decryptPrivateKey', function() {
       it('should decrypt private key', function() {
-        var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+        var c = Credentials.createWithMnemonic(Constants.LIVENET, '', 'en', 0);
         c.encryptPrivateKey('password');
         c.isPrivKeyEncrypted().should.be.true;
         c.decryptPrivateKey('password');
@@ -315,7 +315,7 @@ describe('Credentials', function() {
         should.not.exist(c.mnemonicEncrypted);
       });
       it('should fail to decrypt private key with wrong password', function() {
-        var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+        var c = Credentials.createWithMnemonic(Constants.LIVENET, '', 'en', 0);
         c.encryptPrivateKey('password');
 
         var err;
@@ -330,7 +330,7 @@ describe('Credentials', function() {
         should.not.exist(c.mnemonic);
       });
       it('should fail to decrypt private key when not encrypted', function() {
-        var c = Credentials.create('livenet');
+        var c = Credentials.create(Constants.LIVENET);
 
         var err;
         try {
@@ -344,7 +344,7 @@ describe('Credentials', function() {
     });
     describe('#getKeys', function() {
       it('should get keys regardless of encryption', function() {
-        var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+        var c = Credentials.createWithMnemonic(Constants.LIVENET, '', 'en', 0);
         var keys = c.getKeys();
         should.exist(keys);
         should.exist(keys.xPrivKey);
@@ -365,7 +365,7 @@ describe('Credentials', function() {
         keys3.should.deep.equal(keys);
       });
       it('should get derived keys regardless of encryption', function() {
-        var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+        var c = Credentials.createWithMnemonic(Constants.LIVENET, '', 'en', 0);
         var xPrivKey = c.getDerivedXPrivKey();
         should.exist(xPrivKey);
 
