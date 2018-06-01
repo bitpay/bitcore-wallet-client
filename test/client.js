@@ -1203,7 +1203,7 @@ describe('client API', function() {
           should.not.exist(err);
           x.coin.should.equal('bch');
           x.network.should.equal('livenet');
-          x.address.should.equal('CcJ4qUfyQ8x5NwhAeCQkrBSWVeXxXghcNz');
+          x.address.should.equal('bitcoincash:qrvcdmgpk73zyfd8pmdl9wnuld36zh9n4gms8s0u59');
           done();
         })
       });
@@ -3131,7 +3131,7 @@ describe('client API', function() {
             clients[0].payProHttp = clients[1].payProHttp = http;
 
             clients[0].fetchPayPro(opts, function(err, paypro) {
-              paypro.toAddress.should.equal('CN4yN5kfov99EjS1amKYQnSfaehpyRGzv2');
+              paypro.toAddress.should.equal('bitcoincash:qq7hkvrntz48v9mdlyp8d2dqhxe43z7t6q766yskus');
               http.getCall(0).args[0].coin.should.equal('bch');
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
@@ -5398,7 +5398,7 @@ describe('client API', function() {
 
   var addrMap = {
     btc: ['1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3','1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC'],
-    bch: ['CfNCvxmKYzZsS78pDKKfrDd2doZt3w4jUs','CXivsT4p9F6Us1oQGfo6oJpKiDovJjRVUE']
+    bch: ['bitcoincash:qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e','bitcoincash:qznkyz7hdd3jvkqc76zsf585dcp5czmz5udnlj26ya']
   };
   _.each(['bch', 'btc'], function(coin) {
     var addr= addrMap[coin];
