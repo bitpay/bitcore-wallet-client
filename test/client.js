@@ -14,7 +14,7 @@ var tingodb = require('tingodb')({
   memStore: true
 });
 
-var log = require('../lib/log');
+var log = require('../dist/log');
 
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
@@ -27,15 +27,14 @@ var BitcorePayPro = require('bitcore-payment-protocol');
 
 var BWS = require('bitcore-wallet-service');
 
-var Common = require('../lib/common');
-var Constants = Common.Constants;
-var Utils = Common.Utils;
-var Client = require('../lib');
+var Constants = require('../dist/common/constants');
+const _Utils = require('../dist/common/utils');
+var Client = require('../dist');
 var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;
 var TestData = require('./testdata');
 var ImportData = require('./legacyImportData.js');
-var Errors = require('../lib/errors');
+var Errors = require('../dist/errors');
 
 var helpers = {};
 
@@ -83,6 +82,7 @@ helpers.newDb = function() {
 helpers.generateUtxos = function(scriptType, publicKeyRing, path, requiredSignatures, amounts) {
   var amounts = [].concat(amounts);
   var utxos = _.map(amounts, function(amount, i) {
+    let Utils = new _Utils();
 
     var address = Utils.deriveAddress(scriptType, publicKeyRing, path, requiredSignatures, 'testnet');
 
@@ -553,6 +553,7 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH',
         };
+        let Utils = new _Utils();
         var t = Utils.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
@@ -586,6 +587,7 @@ describe('client API', function() {
           derivationStrategy: 'BIP48',
           addressType: 'P2PKH',
         };
+        let Utils = new _Utils();
         var t = Utils.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
@@ -619,6 +621,7 @@ describe('client API', function() {
           addressType: 'P2PKH',
         };
 
+        let Utils = new _Utils();
         var x = Utils.newBitcoreTransaction;
 
         Utils.newBitcoreTransaction = function() {
@@ -668,6 +671,7 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH',
         };
+        let Utils = new _Utils();
         var t = Utils.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
@@ -706,6 +710,7 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH',
         };
+        let Utils = new _Utils();
         var t = Utils.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
@@ -751,6 +756,7 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH',
         };
+        let Utils = new _Utils();
         (function() {
           var t = Utils.buildTx(txp);
         }).should.throw('Output should have either toAddress or script specified');
@@ -800,6 +806,7 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH',
         };
+        let Utils = new _Utils();
         var t = Utils.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
@@ -1142,6 +1149,7 @@ describe('client API', function() {
       clients[0]._doPostRequest('/v2/wallets/', args, function(err, wallet) {
         should.not.exist(err);
         var c = clients[0].credentials;
+        let Utils = new _Utils();
 
         var args = {
           walletId: '123',
@@ -1373,6 +1381,7 @@ describe('client API', function() {
     it('should detect wallets missing callers pubkey', function(done) {
       // Do not complete clients[1] pkr
       var openWalletStub = sinon.stub(clients[1], 'openWallet').yields();
+      let Utils = new _Utils();
 
       helpers.createAndJoinWallet(clients, 2, 3, function() {
         helpers.tamperResponse([clients[0], clients[1]], 'get', '/v1/wallets/', {}, function(status) {
@@ -2645,6 +2654,7 @@ describe('client API', function() {
           feePerKb: 1,
         };
         clients[0].createTxProposal(opts, function(err, txp) {
+          let Utils = new _Utils();
           should.not.exist(err);
           should.exist(txp);
           var t = Utils.buildTx(txp);
@@ -2684,6 +2694,7 @@ describe('client API', function() {
           clients[0].createTxProposal(opts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
+            let Utils = new _Utils();
             var t = Utils.buildTx(txp);
             should.not.exist(t.getChangeOutput());
             clients[0].publishTxProposal({
@@ -5532,6 +5543,7 @@ describe('client API', function() {
         expected: '12 345,678999',
       }, ];
 
+      let Utils = new _Utils();
       _.each(cases, function(testCase) {
         Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
       });

@@ -5,8 +5,8 @@ var chai = chai || require('chai');
 var sinon = sinon || require('sinon');
 var should = chai.should();
 
-var Constants = require('../lib/common/constants');
-var Credentials = require('../lib/credentials');
+var Constants = require('../dist/common/constants');
+var Credentials = require('../dist/credentials');
 var TestData = require('./testdata');
 
 describe('Credentials', function() {

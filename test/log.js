@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = chai || require('chai');
 var sinon = sinon || require('sinon');
 var should = chai.should();
-var log = require('../lib/log');
+var log = require('../dist/log');
 
 describe('log utils', function() {
   afterEach(function() {

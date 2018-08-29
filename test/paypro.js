@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = chai || require('chai');
 var sinon = sinon || require('sinon');
 var should = chai.should();
-var PayPro = require('../lib/paypro');
+var PayPro = require('../dist/paypro');
 var TestData = require('./testdata');
 
 var TestDataBCH = _.clone(TestData.payProData);

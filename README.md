@@ -16,8 +16,7 @@ See [Bitcore-wallet](https://github.com/bitpay/bitcore-wallet) for a simple CLI 
 
 You can start using bitcore-wallet-client in any of these two ways:
 
-* via [Bower](http://bower.io/): by running `bower install bitcore-wallet-client` from your console
-* or via [NPM](https://www.npmjs.com/package/bitcore-wallet-client): by running `npm install bitcore-wallet-client` from your console.
+* Via [NPM](https://www.npmjs.com/package/bitcore-wallet-client): by running `npm install bitcore-wallet-client` from your console.
 
 ## Example
 

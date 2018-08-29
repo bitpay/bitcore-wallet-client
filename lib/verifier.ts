@@ -1,34 +1,32 @@
-var $ = require('preconditions').singleton();
-var _ = require('lodash');
+import * as _ from 'lodash';
 
-var Bitcore = require('bitcore-lib');
+import * as Bitcore from 'bitcore-lib';
 
-var Common = require('./common');
-var Utils = Common.Utils;
+import { Utils } from './common/utils';
 
-var log = require('./log');
+import * as log from './log';
 
-/**
- * @desc Verifier constructor. Checks data given by the server
- *
- * @constructor
- */
-function Verifier(opts) {};
+export class Verifier {
 
-/**
- * Check address
- *
- * @param {Function} credentials
- * @param {String} address
- * @returns {Boolean} true or false
- */
-Verifier.checkAddress = function(credentials, address) {
-  $.checkState(credentials.isComplete());
+  constructor() {
+    console.log('Verifier class ready!');
+  }
 
-  var local = Utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin);
-  return (local.address == address.address &&
-    _.difference(local.publicKeys, address.publicKeys).length === 0);
-};
+  /**
+   * Check address
+   *
+   * @param {Function} credentials
+   * @param {String} address
+   * @returns {Boolean} true or false
+   */
+  public checkAddress = function(credentials, address) {
+    // preconditions
+    if (!credentials.isComplete()) return;
+
+    var local = Utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin);
+    return (local.address == address.address &&
+      _.difference(local.publicKeys, address.publicKeys).length === 0);
+  };
 
 /**
  * Check copayers
@@ -207,5 +205,4 @@ Verifier.checkTxProposal = function(credentials, txp, opts) {
 
   return true;
 };
-
-module.exports = Verifier;
+};

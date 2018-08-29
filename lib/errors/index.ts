@@ -1,6 +1,4 @@
-'use strict';
-
-var _ = require('lodash');
+import * as _ from 'lodash';
 
 function format(message, args) {
   return message
@@ -41,8 +39,9 @@ var traverseRoot = function(parent, errorsDefinition) {
   return parent;
 };
 
-
-var bwc = {};
+export let bwc = {
+  Error: Function()
+};
 bwc.Error = function() {
   this.message = 'Internal error';
   this.stack = this.message + '\n' + (new Error()).stack;
@@ -51,11 +50,9 @@ bwc.Error.prototype = Object.create(Error.prototype);
 bwc.Error.prototype.name = 'bwc.Error';
 
 
-var data = require('./spec');
-traverseRoot(bwc.Error, data);
+import { errorSpec } from './spec';
+traverseRoot(bwc.Error, errorSpec);
 
-module.exports = bwc.Error;
-
-module.exports.extend = function(spec) {
+export function extend(spec) {
   return traverseNode(bwc.Error, spec);
-};
+}

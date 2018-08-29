@@ -6,7 +6,7 @@ var sinon = require('sinon');
 var should = chai.should();
 var Bitcore = require('bitcore-lib');
 
-var Utils = require('../lib/common/utils');
+var Utils = require('../dist/common/utils');
 
 describe('Utils', function() {
   describe('#hashMessage', function() {
