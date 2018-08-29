@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as sjcl from 'sjcl';
-import * as Buffer from 'buffer';
+import * as b from 'buffer';
 import * as Stringify from 'json-stable-stringify';
 
 import * as Bitcore from 'bitcore-lib';
@@ -79,7 +79,7 @@ export class Utils {
   /* TODO: It would be nice to be compatible with bitcoind signmessage. How
    * the hash is calculated there? */
   public hashMessage(text: string) {
-    const buf = Buffer.from(text);
+    const buf = b.Buffer.from(text);
     let ret = crypto['hash'].sha256sha256(buf); // TODO: review crypto
     ret = new Bitcore.encoding.BufferReader(ret).readReverse();
     return ret;
@@ -139,7 +139,7 @@ export class Utils {
 
     coin = coin || 'btc';
     const bitcore = this.Bitcore_[coin];
-    const publicKeys = _.map(publicKeyRing, function(item) {
+    const publicKeys = _.map(publicKeyRing, (item: any) => {
       var xpub = new bitcore.HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
     });

@@ -37,6 +37,8 @@
     "superagent": "^3.4.1"
   },
   "devDependencies": {
+    "@types/lodash": "4.14.104",
+    "@types/node": "7.0.61",
     "bitcore-wallet-service": "2.3.0",
     "browserify": "^13.1.0",
     "chai": "^1.9.1",
@@ -45,7 +47,9 @@
     "mocha": "^1.18.2",
     "sinon": "^1.10.3",
     "supertest": "^3.0.0",
-    "tingodb": "^0.3.4",
+    "tingodb": "^0.6.1",
+    "ts-node": "5.0.0",
+    "typescript": "2.6.2",
     "uglify": "^0.1.1",
     "uuid": "^2.0.1"
   },
