@@ -265,7 +265,7 @@ export class PayPro {
 
     http(opts, (err, rawData) => {
       if (err) return cb(err);
-      var memo;
+      let memo;
       if (rawData) {
         try {
           var data = BitcorePayPro.PaymentACK.decode(rawData);
