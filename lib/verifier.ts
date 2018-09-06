@@ -8,9 +8,10 @@ import { Utils } from './common/utils';
 
 export class Verifier {
 
-  constructor(
-    private utils: Utils
-  ) {
+  private utils;
+
+  constructor() {
+    this.utils = new Utils();
     console.log('Verifier class ready!');
   }
 
