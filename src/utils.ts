@@ -21,7 +21,7 @@ const encoding = Bitcore.encoding;
 
 let SJCL: Function = ()=>{};
 
-/*
+/**
  * Sign Public Key using an Extended Private Key
  * @param requestPubKey   Public Key
  * @param xPrivKey        Extended Private Key
@@ -32,7 +32,7 @@ export function signRequestPubKey(requestPubKey: string, xPrivKey: string): stri
   return signMessage(requestPubKey, priv);
 }
 
-/*
+/**
  * Format amount in Satoshis to BTC/BCH
  * @param satoshis    Amount in Satoshis
  * @param unit        Unit you want to get
@@ -71,7 +71,7 @@ export function formatAmount(satoshis: number, unit: string, opts?: any): string
   return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u[precision].minDecimals);
 }
 
-/*
+/**
  * Build a Transaction
  * @param txp    Transaction Proposal
  * @return       Transaction
@@ -145,7 +145,7 @@ export function buildTx(txp) {
   return t;
 }
 
-/*
+/**
  * Derive to Address
  * @param scripType         P2PKH
  * @param publicKeyRing     BIP44 or BIP48
@@ -183,7 +183,7 @@ export function deriveAddress(scriptType: string, publicKeyRing: string, path: s
   };
 }
 
-/*
+/**
  * Get Hash for Copayer
  * @param name            Copayer name
  * @param xPubKey         Extended Public Key
@@ -194,7 +194,7 @@ export function getCopayerHash(name: string, xPubKey: string, requestPubKey: str
   return [name, xPubKey, requestPubKey].join('|');
 }
 
-/*
+/**
  * Verify message by signature
  * @param text          Text to be verified
  * @param signature     Your signature
@@ -213,7 +213,7 @@ export function verifyMessage(text: string, signature: string, pubKey: string): 
   };
 }
 
-/*
+/**
  * Decrypt a message
  * @param cyphertextJson  Text to cypher in JSON
  * @param encryptingKey   Key to encrypt (or password)
@@ -228,7 +228,7 @@ export function decryptMessage(cyphertextJson: string, encryptingKey: string): s
   };
 }
 
-/*
+/**
  * Extended Public Key to Copayer ID
  * @param coin      btc or bch
  * @param xpub      Extended Public Key
@@ -240,7 +240,7 @@ export function xPubToCopayerId(coin: string, xpub: string): string {
   return sjcl.codec.hex.fromBits(hash);
 }
 
-/*
+/**
  * Verify Request Public Key
  * @param requestPubKey     Request Public Key
  * @param signature         Your signature
@@ -252,7 +252,8 @@ export function verifyRequestPubKey(requestPubKey, signature, xPubKey) {
   return verifyMessage(requestPubKey, signature, pub.toString());
 }
 
-/* Return a hashed message
+/**
+ * Return a hashed message
  * @param text      Text to be hashed
  * @return          Hashed message as Buffer
  */
@@ -263,7 +264,7 @@ export function hashMessage(text: string) {
   return new Bitcore.encoding.BufferReader(ret).readReverse();
 }
 
-/*
+/**
  * Sign a message
  * @param text      Text to be signed
  * @param privKey   Your Private Key
@@ -275,7 +276,7 @@ export function signMessage(text: string, privKey: string): string {
   return crypto.ECDSA.sign(hash, priv, 'little').toString();
 }
 
-/*
+/**
  * Encrypt a message
  * @param message         Message to be encrypted
  * @param encryptingKey   Password
@@ -289,7 +290,7 @@ export function encryptMessage(message: string, encryptingKey: string): string {
   }, SJCL));
 }
 
-/*
+/**
  * Decrypt a message without Throw Error
  * @param cyphertextJson    Message encrypted to be decrypted
  * @param encryptingKey     Password
@@ -325,7 +326,7 @@ export function decryptMessageNoThrow(cyphertextJson: string, encryptingKey: str
   }
 }
 
-/*
+/**
  * Hash for Transaction Proposal
  * @param proposalHeader    Proposal header
  * @return                  Proposal hash (String)
@@ -343,7 +344,7 @@ export function getProposalHash(toAddress: any, amount?: number, message?: any, 
   return Stringify(toAddress);
 }
 
-/*
+/**
  * Convert a Private Key To AES Key
  * @param privKey     Private Key
  * @return            AES Key
