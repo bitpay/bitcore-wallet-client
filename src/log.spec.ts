@@ -7,8 +7,7 @@ import { Logger } from './log'
 
 describe('Logs', () => {
   let originalLog;
-  const name = 'Utils';
-  const log = new Logger(name);
+  const log = new Logger();
   beforeEach(function() {
     console.warn = function () {};
     console.debug = function () {};
@@ -18,19 +17,19 @@ describe('Logs', () => {
   it('should log .warn', function() {
     log.setLevel('info');
     let a = log.warn('Hello');
-    expect(a).to.equal('[warn] - Utils: Hello');
+    expect(a).to.equal('[warn] Hello');
   });
 
   it('should log .debug', function() {
     log.setLevel('debug');
     let a = log.debug('Hello');
-    expect(a).to.equal('[debug] - Utils: Hello');
+    expect(a).to.equal('[debug] Hello');
   });
 
   it('should log .error', function() {
     log.setLevel('warn');
     let a = log.error('Hello');
-    expect(a).to.equal('[error] - Utils: Hello');
+    expect(a).to.equal('[error] Hello');
   });
 
   it('should not log anything', function() {

@@ -1,6 +1,5 @@
 import * as _ from 'lodash';
 
-const DEFAULT_LOG_NAME = 'Copay';
 const DEFAULT_LOG_LEVEL = 'silent';
 const LEVELS = {
     'silent': -1,
@@ -28,14 +27,9 @@ const LEVELS = {
  * @constructor
  */
 export class Logger {
-  private name: string = DEFAULT_LOG_NAME;
   private level: string = DEFAULT_LOG_LEVEL;
 
-  constructor(
-    name: string
-  ) {
-    this.name = name;
-  }
+  constructor() {}
 
   /**
    * Process logs to show in console
@@ -46,21 +40,13 @@ export class Logger {
 
     if (LEVELS[this.level] > LEVELS[levelName]) return;
 
-    let str = '[' + levelName + '] - ' + this.name + ': ' + message;
+    let str = '[' + levelName + '] ' + message;
     if (console[levelName]) {
       console[levelName](str, ...optionalParams);
     } else {
       console.log(message, ...optionalParams);
     }
     return str;
-  }
-
-  /**
-   * Set name of log
-   * @param {string} Name of logger
-   */
-  public setName(name: string) {
-    this.name = name;
   }
 
   /**
