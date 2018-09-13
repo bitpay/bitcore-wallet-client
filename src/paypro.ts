@@ -13,7 +13,6 @@ export class PayPro {
   };
 
   constructor() {
-    console.log('PayPro class ready!');
   }
   
   private nodeRequest(opts, cb) {

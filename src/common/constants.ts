@@ -1,5 +1,5 @@
 export const Constants = {
-  'SCRIPT_TYPES': {
+  SCRIPT_TYPES: {
     P2SH: 'P2SH',
     P2PKH: 'P2PKH',
   },

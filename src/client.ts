@@ -24,10 +24,9 @@ import { Utils } from './common/utils';
 import { PayPro } from './paypro';
 import { Credentials } from './credentials';
 import { Verifier } from './verifier';
+import { Errors } from './errors/index';
 
 const Package = require('../package.json');
-const Errors = require('./errors');
-
 const BASE_URL = 'http://localhost:3232/bws/api';
 
 export class Client {
@@ -51,6 +50,7 @@ export class Client {
   private _Credentials;
   private _Verifier;
   private _PayPro;
+  private _Errors;
 
   private Bitcore_ = {
     btc: Bitcore,
@@ -68,6 +68,7 @@ export class Client {
     this._Credentials = new Credentials();
     this._Verifier = new Verifier();
     this._PayPro = new PayPro();
+    this._Errors = new Errors();
 
     opts = opts || {};
     this.request = opts.request || request;
@@ -141,7 +142,7 @@ export class Client {
     this.notificationsIntervalId = setInterval(() => {
       this._fetchLatestNotifications(interval, (err) => {
         if (err) {
-          if (err instanceof Errors.NOT_FOUND || err instanceof Errors.NOT_AUTHORIZED) {
+          if (err instanceof this._Errors.NOT_FOUND || err instanceof this._Errors.NOT_AUTHORIZED) {
             this._disposeNotifications();
           }
         }
@@ -252,8 +253,8 @@ export class Client {
     }
     let ret;
     if (body.code) {
-      if (Errors[body.code]) {
-        ret = new Errors[body.code];
+      if (this._Errors[body.code]) {
+        ret = new this._Errors[body.code];
         if (body.message) ret.message = body.message;
       } else {
         ret = new Error(body.code + ': ' + body.message);
@@ -480,7 +481,7 @@ export class Client {
       const credentials = this._Credentials.fromObj(JSON.parse(str));
       this.credentials = credentials;
     } catch (ex) {
-      throw new Errors.INVALID_BACKUP;
+      throw new this._Errors.INVALID_BACKUP;
     }
   }
 
@@ -494,14 +495,14 @@ export class Client {
       if (!err) return cb(null, ret);
 
       // Is the error other than "copayer was not found"? || or no priv key.
-      if (err instanceof Errors.NOT_AUTHORIZED || this.isPrivKeyExternal())
+      if (err instanceof this._Errors.NOT_AUTHORIZED || this.isPrivKeyExternal())
         return cb(err);
 
       //Second option, lets try to add an access
       // TODO log.info('Copayer not found, trying to add access');
       this.addAccess({}, (err) => {
         if (err) {
-          return cb(new Errors.WALLET_DOES_NOT_EXIST);
+          return cb(new this._Errors.WALLET_DOES_NOT_EXIST);
         }
 
         this.openWallet(cb);
@@ -540,13 +541,13 @@ export class Client {
       this.credentials = derive(false);
     } catch (e) {
       // TODO log.info('Mnemonic error:', e);
-      return cb(new Errors.INVALID_BACKUP);
+      return cb(new this._Errors.INVALID_BACKUP);
     }
 
     this._import((err, ret) => {
       if (!err) return cb(null, ret);
-      if (err instanceof Errors.INVALID_BACKUP) return cb(err);
-      if (err instanceof Errors.NOT_AUTHORIZED || err instanceof Errors.WALLET_DOES_NOT_EXIST) {
+      if (err instanceof this._Errors.INVALID_BACKUP) return cb(err);
+      if (err instanceof this._Errors.NOT_AUTHORIZED || err instanceof this._Errors.WALLET_DOES_NOT_EXIST) {
         let altCredentials = derive(true);
         if (altCredentials.xPubKey.toString() == this.credentials.xPubKey.toString()) return cb(err);
         this.credentials = altCredentials;
@@ -580,7 +581,7 @@ export class Client {
       this.credentials = this._Credentials.fromExtendedPrivateKey(opts.coin || 'btc', xPrivKey, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
     } catch (e) {
       // TODO log.info('xPriv error:', e);
-      return cb(new Errors.INVALID_BACKUP);
+      return cb(new this._Errors.INVALID_BACKUP);
     };
 
     this._import(cb);
@@ -610,7 +611,7 @@ export class Client {
       this.credentials = this._Credentials.fromExtendedPublicKey(opts.coin || 'btc', xPubKey, source, entropySourceHex, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
     } catch (e) {
       // TODO log.info('xPriv error:', e);
-      return cb(new Errors.INVALID_BACKUP);
+      return cb(new this._Errors.INVALID_BACKUP);
     };
 
     this._import(cb);
@@ -678,7 +679,7 @@ export class Client {
 
         const fee = opts.fee || 10000;
         const amount = _.sumBy(utxos, 'satoshis') - fee;
-        if (amount <= 0) return next(new Errors.INSUFFICIENT_FUNDS);
+        if (amount <= 0) return next(new this._Errors.INSUFFICIENT_FUNDS);
 
         let tx;
         try {
@@ -695,7 +696,7 @@ export class Client {
 
         } catch (ex) {
           // TODO log.error('Could not build transaction from private key', ex);
-          return next(new Errors.COULD_NOT_BUILD_TRANSACTION);
+          return next(new this._Errors.COULD_NOT_BUILD_TRANSACTION);
         }
         return next(null, tx);
       }
@@ -731,7 +732,7 @@ export class Client {
 
       if (this.credentials.walletPrivKey) {
         if (!this._Verifier.checkCopayers(this.credentials, wallet.copayers)) {
-          return cb(new Errors.SERVER_COMPROMISED);
+          return cb(new this._Errors.SERVER_COMPROMISED);
         }
       } else {
         // this should only happen in AIR-GAPPED flows
@@ -807,7 +808,7 @@ export class Client {
 
     r.end((err, res) => {
       if (!res) {
-        return cb(new Errors.CONNECTION_ERROR);
+        return cb(new this._Errors.CONNECTION_ERROR);
       }
 
       if (res.body)
@@ -819,10 +820,10 @@ export class Client {
 
       if (res.status !== 200) {
         if (res.status === 404)
-          return cb(new Errors.NOT_FOUND);
+          return cb(new this._Errors.NOT_FOUND);
 
         if (!res.status)
-          return cb(new Errors.CONNECTION_ERROR);
+          return cb(new this._Errors.CONNECTION_ERROR);
 
         // TODO log.error('HTTP Error:' + res.status);
 
@@ -833,7 +834,7 @@ export class Client {
       }
 
       if (res.body === '{"error":"read ECONNRESET"}')
-        return cb(new Errors.ECONNRESET_ERROR(JSON.parse(res.body)));
+        return cb(new this._Errors.ECONNRESET_ERROR(JSON.parse(res.body)));
 
       return cb(null, res.body, res.header);
     });
@@ -861,7 +862,7 @@ export class Client {
     let doLogin = function(cb) {
       this._login(function(err, s) {
         if (err) return cb(err);
-        if (!s) return cb(new Errors.NOT_AUTHORIZED);
+        if (!s) return cb(new this._Errors.NOT_AUTHORIZED);
         this.session = s;
         cb();
       });
@@ -875,7 +876,7 @@ export class Client {
       },
       function(next) {
         this._doRequest(method, url, args, true, (err, body, header) => {
-          if (err && err instanceof Errors.NOT_AUTHORIZED) {
+          if (err && err instanceof this._Errors.NOT_AUTHORIZED) {
             doLogin(function(err) {
               if (err) return next(err);
               return this._doRequest(method, url, args, true, next);
@@ -1436,7 +1437,7 @@ export class Client {
 
       this._doPostRequest('/v2/wallets/', args, function(err, body) {
         if (err) {
-          if (!(err instanceof Errors.WALLET_ALREADY_EXISTS))
+          if (!(err instanceof this._Errors.WALLET_ALREADY_EXISTS))
             return cb(err);
 
           return this.addAccess({}, function(err) {
@@ -1459,7 +1460,7 @@ export class Client {
             supportBIP44AndP2PKH: supportBIP44AndP2PKH,
           }, function(err) {
             //Ignore error is copayer already in wallet
-            if (err && err instanceof Errors.COPAYER_IN_WALLET) return next();
+            if (err && err instanceof this._Errors.COPAYER_IN_WALLET) return next();
             return next(err);
           });
         }, cb);
@@ -1725,7 +1726,7 @@ export class Client {
 
       this._processTxps(txp);
       if (!this._Verifier.checkProposalCreation(args, txp, this.credentials.sharedEncryptingKey)) {
-        return cb(new Errors.SERVER_COMPROMISED);
+        return cb(new this._Errors.SERVER_COMPROMISED);
       }
 
       return cb(null, txp);
@@ -1788,7 +1789,7 @@ export class Client {
       if (err) return cb(err);
 
       if (!this._Verifier.checkAddress(this.credentials, address)) {
-        return cb(new Errors.SERVER_COMPROMISED);
+        return cb(new this._Errors.SERVER_COMPROMISED);
       }
 
       return cb(null, address);
@@ -1828,7 +1829,7 @@ export class Client {
           return !this._Verifier.checkAddress(this.credentials, address);
         });
         if (fake)
-          return cb(new Errors.SERVER_COMPROMISED);
+          return cb(new this._Errors.SERVER_COMPROMISED);
       }
       return cb(null, addresses);
     });
@@ -1900,7 +1901,7 @@ export class Client {
         },
         function(isLegit) {
           if (!isLegit)
-            return cb(new Errors.SERVER_COMPROMISED);
+            return cb(new this._Errors.SERVER_COMPROMISED);
 
           var result;
           if (opts.forAirGapped) {
@@ -1956,10 +1957,10 @@ export class Client {
 
     if (!txp.signatures) {
       if (!this.canSign())
-        return cb(new Errors.MISSING_PRIVATE_KEY);
+        return cb(new this._Errors.MISSING_PRIVATE_KEY);
 
       if (this.isPrivKeyEncrypted() && !password)
-        return cb(new Errors.ENCRYPTED_PRIVATE_KEY);
+        return cb(new this._Errors.ENCRYPTED_PRIVATE_KEY);
     }
 
     this.getPayPro(txp, function(err, paypro) {
@@ -1970,7 +1971,7 @@ export class Client {
       });
 
       if (!isLegit)
-        return cb(new Errors.SERVER_COMPROMISED);
+        return cb(new this._Errors.SERVER_COMPROMISED);
 
       let signatures = txp.signatures;
 
@@ -2012,10 +2013,10 @@ export class Client {
     //$.checkState(this.credentials);
 
     if (!this.canSign())
-      throw new Errors.MISSING_PRIVATE_KEY;
+      throw new this._Errors.MISSING_PRIVATE_KEY;
 
     if (this.isPrivKeyEncrypted() && !password)
-      throw new Errors.ENCRYPTED_PRIVATE_KEY;
+      throw new this._Errors.ENCRYPTED_PRIVATE_KEY;
 
     var publicKeyRing;
     try {

@@ -2,18 +2,19 @@ import * as _ from 'lodash';
 
 import * as Bitcore from 'bitcore-lib';
 
-import { Utils } from './common/utils';
+import { 
+  deriveAddress, 
+  getCopayerHash, 
+  verifyMessage, 
+  decryptMessage, 
+  xPubToCopayerId, 
+  verifyRequestPubKey, 
+  buildTx 
+} from './utils';
 
 //import * as log from './log';
 
-export class Verifier {
-
-  private utils;
-
-  constructor() {
-    this.utils = new Utils();
-    console.log('Verifier class ready!');
-  }
+export function Verifier() {
 
   /**
    * Check address
@@ -22,11 +23,11 @@ export class Verifier {
    * @param {String} address
    * @returns {Boolean} true or false
    */
-  public checkAddress(credentials, address) {
+  let checkAddress = function(credentials, address) {
     // preconditions
     if (!credentials.isComplete()) return;
 
-    const local = this.utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin);
+    const local = deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin);
     return (local.address == address.address &&
       _.difference(local.publicKeys, address.publicKeys).length === 0);
   }
@@ -64,8 +65,8 @@ export class Verifier {
         // TODO log.error('Missing copayer fields in server response');
         error = true;
       } else {
-        const hash = this.utils.getCopayerHash(copayer.encryptedName || copayer.name, copayer.xPubKey, copayer.requestPubKey);
-        if (!this.utils.verifyMessage(hash, copayer.signature, walletPubKey)) {
+        const hash = getCopayerHash(copayer.encryptedName || copayer.name, copayer.xPubKey, copayer.requestPubKey);
+        if (!verifyMessage(hash, copayer.signature, walletPubKey)) {
           // TODO log.error('Invalid signatures in server response');
           error = true;
         }
@@ -96,7 +97,7 @@ export class Verifier {
       if (o1.amount != o2.amount) return false;
       let decryptedMessage = null;
       try {
-        decryptedMessage = this.utils.decryptMessage(o2.message, encryptingKey);
+        decryptedMessage = decryptMessage(o2.message, encryptingKey);
       } catch (e) {
         return false;
       }
@@ -114,7 +115,7 @@ export class Verifier {
 
     let decryptedMessage = null;
     try {
-      decryptedMessage = this.utils.decryptMessage(args.message, encryptingKey);
+      decryptedMessage = decryptMessage(args.message, encryptingKey);
     } catch (e) {
       return false;
     }
@@ -131,7 +132,7 @@ export class Verifier {
     if (!credentials.isComplete()) return;
 
     const creatorKeys = _.find(credentials.publicKeyRing, function(item) {
-      if (this.utils.xPubToCopayerId(txp.coin || 'btc', item.xPubKey) === txp.creatorId) return true;
+      if (xPubToCopayerId(txp.coin || 'btc', item.xPubKey) === txp.creatorId) return true;
     });
 
     if (!creatorKeys) return false;
@@ -141,7 +142,7 @@ export class Verifier {
     if (txp.proposalSignaturePubKey) {
 
       // Verify it...
-      if (!this.utils.verifyRequestPubKey(txp.proposalSignaturePubKey, txp.proposalSignaturePubKeySig, creatorKeys.xPubKey))
+      if (!verifyRequestPubKey(txp.proposalSignaturePubKey, txp.proposalSignaturePubKeySig, creatorKeys.xPubKey))
         return false;
 
       creatorSigningPubKey = txp.proposalSignaturePubKey;
@@ -153,14 +154,14 @@ export class Verifier {
 
     let hash;
     if (parseInt(txp.version) >= 3) {
-      var t = this.utils.buildTx(txp);
+      var t = buildTx(txp);
       hash = t.uncheckedSerialize();
     } else {
       throw new Error('Transaction proposal not supported');
     }
 
     // TODO log.debug('Regenerating & verifying tx proposal hash -> Hash: ', hash, ' Signature: ', txp.proposalSignature);
-    if (!this.utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
+    if (!verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
       return false;
 
     if (!this.checkAddress(credentials, txp.changeAddress))

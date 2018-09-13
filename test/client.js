@@ -29,7 +29,7 @@ var BWS = require('bitcore-wallet-service');
 
 var Constants = require('../dist/common/constants');
 const _Utils = require('../dist/common/utils');
-var Client = require('../dist');
+var Client = require('../dist/client');
 var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;
 var TestData = require('./testdata');
