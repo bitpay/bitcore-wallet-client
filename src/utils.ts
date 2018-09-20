@@ -8,6 +8,7 @@ import * as BitcoreCash from 'bitcore-lib-cash';
 
 import { Constants } from './common/constants';
 import { Defaults } from './common/defaults';
+import { Logger } from './logger';
 
 const Bitcore_ = {
   btc: Bitcore,
@@ -18,6 +19,8 @@ const PrivateKey = Bitcore.PrivateKey;
 const PublicKey = Bitcore.PublicKey;
 const crypto = Bitcore.crypto;
 const encoding = Bitcore.encoding;
+
+const log = new Logger();
 
 let SJCL: Function = ()=>{};
 
@@ -101,7 +104,7 @@ export function buildTx(txp) {
   } else if (txp.outputs) {
     _.each(txp.outputs, function(o) {
       if (!o.script && !o.toAddress) {
-        //console.log('Output should have either toAddress or script specified');  
+        log.debug('Output should have either toAddress or script specified');  
         return;
       }
       if (o.script) {
@@ -155,7 +158,7 @@ export function buildTx(txp) {
  * @param coin              btc or bch
  * @return                  Object<address,path,publicKeys>
  */
-export function deriveAddress(scriptType: string, publicKeyRing: string, path: string, m: string, network: string, coin: string) {
+export function deriveAddress(scriptType: string, publicKeyRing: Array<object>, path: string, m: number, network: string, coin: string) {
   if (!_.includes(_.values(Constants.SCRIPT_TYPES), scriptType)) return;
 
   coin = coin || 'btc';
@@ -209,6 +212,7 @@ export function verifyMessage(text: string, signature: string, pubKey: string): 
     const sig = new crypto.Signature.fromString(signature);
     return crypto.ECDSA.verify(hash, sig, pub, 'little');
   } catch (e) {
+    log.warn(e);
     return false;
   };
 }
@@ -224,6 +228,7 @@ export function decryptMessage(cyphertextJson: string, encryptingKey: string): s
   try { 
     return sjcl.decrypt(key, cyphertextJson);
   } catch (e) {
+    log.warn(e);
     throw e;
   };
 }
@@ -302,6 +307,7 @@ export function decryptMessageNoThrow(cyphertextJson: string, encryptingKey: str
     try {
       r=JSON.parse(str);
     } catch (e) {
+      log.warn(e);
       return false;
     }
     return r;
@@ -322,6 +328,7 @@ export function decryptMessageNoThrow(cyphertextJson: string, encryptingKey: str
   try {
     return decryptMessage(cyphertextJson, encryptingKey);
   } catch (e) {
+    log.warn(e);
     return '<ECANNOTDECRYPT>';
   }
 }
@@ -351,7 +358,7 @@ export function getProposalHash(toAddress: any, amount?: number, message?: any, 
  */
 export function privateKeyToAESKey(privKey: string) {
   if (!Bitcore.PrivateKey.isValid(privKey)) {
-    //console.log('The private key received is invalid');
+    log.debug('The private key received is invalid');
     return;
   }
   const pk = Bitcore.PrivateKey.fromString(privKey);

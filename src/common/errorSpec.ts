@@ -28,6 +28,10 @@ export const errorSpec = [
     message: 'Insufficient funds.',
   },
   {
+    name: 'WALLET_NOT_COMPLETE',
+    message: 'Wallet not complete'
+  }, 
+  {
     name: 'CONNECTION_ERROR',
     message: 'Wallet service connection error.',
   },
