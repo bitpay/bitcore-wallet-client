@@ -6,6 +6,9 @@ import * as BitcorePayPro from 'bitcore-payment-protocol';
 import * as Http from 'http';
 import * as Https from 'https';
 
+import { Logger } from './logger';
+const log = new Logger();
+
 export class PayPro {
   private Bitcore_ = {
     btc: Bitcore,
@@ -22,7 +25,7 @@ export class PayPro {
     let fn = opts.method == 'POST' ? 'post' : 'get';
 
     http[fn](opts, function(res) {
-      let data; // List of Buffer objects
+      let data: any = []; // List of Buffer objects
 
 
       if (res.statusCode != 200)
@@ -215,7 +218,7 @@ export class PayPro {
   }
 
 
-  private createPayment = function(merchant_data, rawTx, refundAddr, amountSat, coin) {
+  public createPayment = function(merchant_data, rawTx, refundAddr, amountSat, coin) {
     let pay = new BitcorePayPro();
     pay = pay.makePayment();
 
@@ -272,7 +275,7 @@ export class PayPro {
           var ack = pp.makePaymentACK(data);
           memo = ack.get('memo');
         } catch (e) {
-          console.log('Could not decode paymentACK');
+          log.error('Could not decode paymentACK');
         };
       }
       return cb(null, rawData, memo);
