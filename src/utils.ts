@@ -86,7 +86,8 @@ export function buildTx(txp) {
 
   const t = new bitcore.Transaction();
 
-  if (!_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType)) return;
+  if (!_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType))
+    throw new Error('Address type not valid');
 
   switch (txp.addressType) {
     case Constants.SCRIPT_TYPES.P2SH:
@@ -103,10 +104,8 @@ export function buildTx(txp) {
     t.to(txp.toAddress, txp.amount);
   } else if (txp.outputs) {
     _.each(txp.outputs, function(o) {
-      if (!o.script && !o.toAddress) {
-        log.debug('Output should have either toAddress or script specified');  
-        return;
-      }
+      if (!o.script && !o.toAddress)
+        throw new Error('Output should have either toAddress or script specified');
       if (o.script) {
         t.addOutput(new bitcore.Transaction.Output({
           script: o.script,
@@ -126,7 +125,8 @@ export function buildTx(txp) {
     var outputOrder = _.reject(txp.outputOrder, function(order) {
       return order >= t.outputs.length;
     });
-    if (t.outputs.length != outputOrder.length) return;
+    if (t.outputs.length != outputOrder.length)
+      throw new Error('Outputs do not match');
     t.sortOutputs(function(outputs) {
       return _.map(outputOrder, function(i) {
         return outputs[i];
@@ -142,8 +142,10 @@ export function buildTx(txp) {
     return +o.satoshis + memo;
   }, 0);
 
-  if (totalInputs - totalOutputs < 0) return;
-  if (totalInputs - totalOutputs > Defaults.MAX_TX_FEE) return;
+  if (totalInputs - totalOutputs < 0)
+    throw new Error('Fee too low');
+  if (totalInputs - totalOutputs > Defaults.MAX_TX_FEE)
+    throw new Error('Fee too high');
 
   return t;
 }
