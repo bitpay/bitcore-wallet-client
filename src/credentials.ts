@@ -48,7 +48,7 @@ interface Credential {
   entropySourcePath?: string;
 };
 
-const wordsForLang = {
+const WORDS_FOR_LANGUAGE = {
   'en': Mnemonic.Words.ENGLISH,
   'es': Mnemonic.Words.SPANISH,
   'ja': Mnemonic.Words.JAPANESE,
@@ -57,9 +57,19 @@ const wordsForLang = {
   'it': Mnemonic.Words.ITALIAN,
 };
 
+const AVAILABLE_COINS = [
+  'btc', 
+  'bch'
+];
+
+const AVAILABLE_NETWORKS = [
+  'livenet',
+  'testnet'
+];
+
 export class Credentials {
 
-  private credential: Credential = { 
+  public credential: Credential = {
     version: '1', 
     account: 0, 
     derivationStrategy: Constants.DERIVATION_STRATEGIES.BIP44
@@ -73,7 +83,7 @@ export class Credentials {
    * @return  {void}
    */
   private checkCoin(coin: string): void {
-    if (!_.includes(['btc', 'bch'], coin)) throw new Error('Invalid coin');
+    if (!_.includes(AVAILABLE_COINS, coin)) throw new Error('Invalid coin');
   }
 
   /**
@@ -82,7 +92,7 @@ export class Credentials {
    * @return  {void}
    */
   private checkNetwork(network: string): void {
-    if (!_.includes(['livenet', 'testnet'], network)) throw new Error('Invalid network');
+    if (!_.includes(AVAILABLE_NETWORKS, network)) throw new Error('Invalid network');
   }
 
   /**
@@ -91,7 +101,7 @@ export class Credentials {
    * @return  {void}
    */
   private checkLanguage(language: string): void {
-    if (!wordsForLang[language]) throw new Error('Unsupported language');
+    if (!WORDS_FOR_LANGUAGE[language]) throw new Error('Unsupported language');
   }
 
   /**
@@ -148,9 +158,9 @@ export class Credentials {
     
     opts = opts || {};
 
-    let m = new Mnemonic(wordsForLang[language]);
+    let m = new Mnemonic(WORDS_FOR_LANGUAGE[language]);
     while (!Mnemonic.isValid(m.toString())) {
-      m = new Mnemonic(wordsForLang[language])
+      m = new Mnemonic(WORDS_FOR_LANGUAGE[language])
     };
 
     this.credential.coin = coin;
