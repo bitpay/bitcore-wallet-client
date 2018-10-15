@@ -41,7 +41,7 @@ export class Verifier {
    */
   public checkCopayers(credentials, copayers): boolean {
     // TODO preconditions
-    if (!credentials.walletPrivKey) throw new Error();;
+    if (!credentials.walletPrivKey) throw new Error();
     
     const walletPubKey = Bitcore.PrivateKey.fromString(credentials.walletPrivKey).toPublicKey().toString();
 

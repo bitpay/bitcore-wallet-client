@@ -16,7 +16,7 @@ interface Key {
   mnemonic?: string
 };
 
-interface Credential {
+export interface Credential {
   account: number;
   version: string;
   derivationStrategy: string;
@@ -515,7 +515,7 @@ export class Credentials implements Credential {
    * @param   {string}    Wallet Private Key
    * @return  {void}
    */
-  private addWalletPrivateKey(walletPrivKey: string): void {
+  public addWalletPrivateKey(walletPrivKey: string): void {
     this.walletPrivKey = walletPrivKey;
     this.sharedEncryptingKey = privateKeyToAESKey(walletPrivKey);
   }
