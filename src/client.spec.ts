@@ -32,8 +32,8 @@ import {
 } from './utils';
 import {Client} from './client';
 import {Constants} from './common/constants';
-import {Errors} from './errors';
 
+const Errors = require('./errors');
 const ExpressApp = BWS.ExpressApp;
 const Storage = BWS.Storage;
 
@@ -477,7 +477,7 @@ describe('client API', function() {
             network: 'testnet'
           },
           function(err) {
-            //TODO err.should.be.an.instanceOf(Errors.NOT_FOUND);
+            err.should.be.an.instanceOf(Errors.NOT_FOUND);
             done();
           });
       });
@@ -501,7 +501,7 @@ describe('client API', function() {
         network: 'testnet'
       }, function(err, secret) {
         should.exist(err);
-        //TODO err.should.be.an.instanceOf(Errors.CONNECTION_ERROR);
+        err.should.be.an.instanceOf(Errors.CONNECTION_ERROR);
         done();
       });
     });
@@ -1364,7 +1364,7 @@ describe('client API', function() {
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         should.exist(w.secret);
         clients[4].joinWallet(w.secret, 'copayer', {}, function(err, result) {
-          //TODO err.should.be.an.instanceOf(Errors.WALLET_FULL);
+          err.should.be.an.instanceOf(Errors.WALLET_FULL);
           done();
         });
       });
@@ -1384,7 +1384,7 @@ describe('client API', function() {
       // Unknown walletId
       var oldSecret = '3bJKRn1HkQTpwhVaJMaJ22KwsjN24ML9uKfkSrP7iDuq91vSsTEygfGMMpo6kWLp1pXG9wZSKcT';
       clients[0].joinWallet(oldSecret, 'copayer', {}, function(err, result) {
-        //TODO err.should.be.an.instanceOf(Errors.WALLET_NOT_FOUND);
+        err.should.be.an.instanceOf(Errors.WALLET_NOT_FOUND);
         done();
       });
     });
@@ -1399,7 +1399,7 @@ describe('client API', function() {
         }, function() {
           openWalletStub.restore();
           clients[1].openWallet(function(err, x) {
-            //TODO err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
         });
@@ -1416,7 +1416,7 @@ describe('client API', function() {
         }, function() {
           openWalletStub.restore();
           clients[1].openWallet(function(err, x) {
-            //TODO err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
         });
@@ -1439,7 +1439,7 @@ describe('client API', function() {
         }, function() {
           openWalletStub.restore();
           clients[1].openWallet(function(err, x) {
-            //TODO err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
         });
@@ -2004,7 +2004,7 @@ describe('client API', function() {
           address.address = '2N86pNEpREGpwZyHVC5vrNUCbF9nM1Geh4K';
         }, function() {
           clients[0].createAddress(function(err, x0) {
-            //TODO err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
         });
@@ -2019,7 +2019,7 @@ describe('client API', function() {
           ];
         }, function() {
           clients[0].createAddress(function(err, x0) {
-            //TODO err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
         });
@@ -2314,7 +2314,7 @@ describe('client API', function() {
         helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', args, tamperFn, function() {
           clients[0].createTxProposal(opts, function(err, txp) {
             should.exist(err, tamperFn);
-            //TODO err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             next();
           });
         });
@@ -2359,7 +2359,7 @@ describe('client API', function() {
             txp: txp2
           }, function(err) {
             should.exist(err);
-            //TODO err.should.be.an.instanceOf(Errors.UNAVAILABLE_UTXOS);
+            err.should.be.an.instanceOf(Errors.UNAVAILABLE_UTXOS);
             next();
           });
         },
@@ -2408,7 +2408,7 @@ describe('client API', function() {
           };
           helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
             should.exist(err);
-            //TODO err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS);
+            err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS);
             done();
           });
         });
@@ -2423,7 +2423,7 @@ describe('client API', function() {
       };
       helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
         should.exist(err);
-        //TODO err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
+        err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
         opts.feePerKb = 100e2;
         helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
           should.not.exist(err);
@@ -2444,7 +2444,7 @@ describe('client API', function() {
         should.not.exist(err);
 
         helpers.createAndPublishTxProposal(clients[0], opts, function(err, y) {
-          //TODO err.should.be.an.instanceOf(Errors.LOCKED_FUNDS);
+          err.should.be.an.instanceOf(Errors.LOCKED_FUNDS);
 
           clients[1].rejectTxProposal(x, 'no', function(err) {
             should.not.exist(err);
@@ -2470,7 +2470,7 @@ describe('client API', function() {
         should.not.exist(err);
 
         helpers.createAndPublishTxProposal(clients[0], opts, function(err, y) {
-          //TODO err.should.be.an.instanceOf(Errors.LOCKED_FUNDS);
+          err.should.be.an.instanceOf(Errors.LOCKED_FUNDS);
 
           clients[0].removeTxProposal(x, function(err) {
             should.not.exist(err);
@@ -2581,7 +2581,7 @@ describe('client API', function() {
               }, function() {
                 clients[0].getTxProposals({}, function(err, txps) {
                   should.exist(err);
-                  //TODO err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+                  err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
                   done();
                 });
               });
@@ -2603,7 +2603,7 @@ describe('client API', function() {
           }, function() {
             clients[0].getTxProposals({}, function(err, txps) {
               should.exist(err);
-              //TODO err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+              err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
               done();
             });
           });
@@ -2623,7 +2623,7 @@ describe('client API', function() {
           }, function() {
             clients[0].getTxProposals({}, function(err, txps) {
               should.exist(err);
-              //TODO err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+              err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
               done();
             });
           });
@@ -3670,12 +3670,12 @@ describe('client API', function() {
               txp.status.should.equal('pending');
               clients[0].signTxProposal(txp, function(err) {
                 should.exist(err);
-                //TODO err.should.be.an.instanceOf(Errors.COPAYER_VOTED);
+                err.should.be.an.instanceOf(Errors.COPAYER_VOTED);
                 clients[1].rejectTxProposal(txp, 'xx', function(err, txp) {
                   should.not.exist(err);
                   clients[1].rejectTxProposal(txp, 'xx', function(err) {
                     should.exist(err);
-                    //TODO err.should.be.an.instanceOf(Errors.COPAYER_VOTED);
+                    err.should.be.an.instanceOf(Errors.COPAYER_VOTED);
                     done();
                   });
                 });
@@ -4208,7 +4208,7 @@ describe('client API', function() {
             network: 'livenet',
           }, function(err) {
             should.exist(err);
-            //TODO err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+            err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
             spy.getCalls().length.should.equal(1);
             importedClient = null;
             done();
@@ -4224,7 +4224,7 @@ describe('client API', function() {
             network: 'livenet',
           }, function(err) {
             should.exist(err);
-            //TODO err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+            err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
             spy.getCalls().length.should.equal(1);
             importedClient = null;
             done();
@@ -4298,7 +4298,7 @@ describe('client API', function() {
         importedClient.importFromMnemonic(exported, {
           network: 'testnet',
         }, function(err) {
-          //TODO err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+          err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
           importedClient.mnemonicHasPassphrase().should.equal(false);
           importedClient.credentials.xPrivKey.should.equal('tprv8ZgxMBicQKsPdTYGTn3cPvTJJuuKHCYbfH1fbu4ceZ5tzYrcjYMKY1JfZiEFDDpEXWquSpX6jRsEoVPoaSw82tQ1Wn1U3K1bQDZBj3UGuEG');
           done();
@@ -4311,7 +4311,7 @@ describe('client API', function() {
           network: 'testnet',
           passphrase: 'hola',
         }, function(err) {
-          //TODO err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+          err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
           importedClient.mnemonicHasPassphrase().should.equal(true);
           importedClient.credentials.xPrivKey.should.equal('tprv8ZgxMBicQKsPdVijVxEu7gVDi86PUZqbCe7xTGLwVXwZpsG3HuxLDjXL3DXRSaaNymMD7gRpXimxnUDYa5N7pLTKLQymdSotrb4co7Nwrs7');
           done();
@@ -4403,7 +4403,7 @@ describe('client API', function() {
 
               recoveryClient.getStatus({}, function(err, status) {
                 should.exist(err);
-                //TODO err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+                err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
                 var spy = sinon.spy(recoveryClient, '_doPostRequest');
                 recoveryClient.recreateWallet(function(err) {
                   should.not.exist(err);
@@ -4470,7 +4470,7 @@ describe('client API', function() {
 
                 recoveryClient.getStatus({}, function(err, status) {
                   should.exist(err);
-                  //TODO err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+                  err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
                   recoveryClient.recreateWallet(function(err) {
                     should.not.exist(err);
                     recoveryClient.getStatus({}, function(err, status) {
@@ -4526,7 +4526,7 @@ describe('client API', function() {
 
                 recoveryClient.getStatus({}, function(err, status) {
                   should.exist(err);
-                  //TODO err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+                  err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
                   recoveryClient.recreateWallet(function(err) {
                     should.not.exist(err);
                     recoveryClient.recreateWallet(function(err) {
@@ -4590,7 +4590,7 @@ describe('client API', function() {
               recoveryClient.credentials.account.should.equal(2);
               recoveryClient.getStatus({}, function(err, status) {
                 should.exist(err);
-                //TODO err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+                err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
                 recoveryClient.recreateWallet(function(err) {
                   should.not.exist(err);
                   recoveryClient.getStatus({}, function(err, status) {
@@ -5315,7 +5315,7 @@ describe('client API', function() {
 
       it('should deny access before registering it ', function(done) {
         helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
-          //TODO err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+          err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
           done();
         });
       });
@@ -5367,7 +5367,7 @@ describe('client API', function() {
           generateNewKey: true
         }, function(err, x) {
           helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
-            //TODO err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+            err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
             done();
           });
         });
@@ -5409,7 +5409,7 @@ describe('client API', function() {
               txps[0].proposalSignature = '304402206e4a1db06e00068582d3be41cfc795dcf702451c132581e661e7241ef34ca19202203e17598b4764913309897d56446b51bc1dcd41a25d90fdb5f87a6b58fe3a6920';
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
-                //TODO err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
                 done();
               });
             });
@@ -5425,7 +5425,7 @@ describe('client API', function() {
               txps[0].proposalSignaturePubKey = '02d368d7f03a57b2ad3ad9c2766739da83b85ab9c3718fb02ad36574f9391d6bf6';
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
-                //TODO err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
                 done();
               });
             });
@@ -5442,7 +5442,7 @@ describe('client API', function() {
               txps[0].proposalSignaturePubKeySig = '304402201528748eafc5083fe67c84cbf0eb996eba9a65584a73d8c07ed6e0dc490c195802204f340488266c804cf1033f8b852efd1d4e05d862707c119002dc3fbe7a805c35';
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
-                //TODO err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
                 done();
               });
             });
@@ -5534,7 +5534,7 @@ describe('client API', function() {
           }, function(err, tx) {
             should.exist(err);
             should.not.exist(tx);
-            //TODO err.should.be.an.instanceOf(Errors.COULD_NOT_BUILD_TRANSACTION);
+            err.should.be.an.instanceOf(Errors.COULD_NOT_BUILD_TRANSACTION);
             sandbox.restore();
             done();
           });
@@ -5554,7 +5554,7 @@ describe('client API', function() {
             coin: coin,
           }, function(err, tx) {
             should.exist(err);
-            //TODO err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS);
+            err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS);
             done();
           });
         });
@@ -5602,7 +5602,7 @@ describe('client API', function() {
       var client = new Client();
 
       var _f = sandbox.stub(client, '_fetchLatestNotifications', function(interval, cb) {
-        //TODO cb(new Errors.NOT_FOUND);
+        cb(new Errors.NOT_FOUND);
       });
 
       client._initNotifications({
@@ -5622,7 +5622,7 @@ describe('client API', function() {
       var client = new Client();
 
       var _f = sandbox.stub(client, '_fetchLatestNotifications', function(interval, cb) {
-        //TODO cb(new Errors.NOT_AUTHORIZED);
+        cb(new Errors.NOT_AUTHORIZED);
         cb();
       });
 
@@ -5645,8 +5645,7 @@ describe('client API', function() {
         var client = new Client();
         (function() {
           client.import(importString);
-          //TODO Errors.INVALID_BACKUP
-        }).should.throw();
+        }).should.throw(Errors.INVALID_BACKUP);
         done();
       });
     });
@@ -5671,7 +5670,7 @@ describe('client API', function() {
 
         client._import(function(err) {
           should.exist(err);
-          //TODO err.should.be.an.instanceOf(Errors.WALLET_DOES_NOT_EXIST);
+          err.should.be.an.instanceOf(Errors.WALLET_DOES_NOT_EXIST);
           sandbox.restore();
           done();
         });
@@ -5684,7 +5683,7 @@ describe('client API', function() {
         var mnemonicWords = 'this is an invalid mnemonic';
         client.importFromMnemonic(mnemonicWords, {}, function(err) {
           should.exist(err);
-          //TODO err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
           done();
         });
       });
@@ -5696,7 +5695,7 @@ describe('client API', function() {
         var xPrivKey = 'this is an invalid key';
         client.importFromExtendedPrivateKey(xPrivKey, {}, function(err) {
           should.exist(err);
-          //TODO err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
           done();
         });
       });
@@ -5708,7 +5707,7 @@ describe('client API', function() {
         var xPubKey = 'this is an invalid key';
         client.importFromExtendedPublicKey(xPubKey, {}, {}, {}, function(err) {
           should.exist(err);
-          //TODO err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
           done();
         });
       });
@@ -5755,7 +5754,7 @@ describe('client API', function() {
         should.exist(err);
         should.not.exist(body);
         should.not.exist(header);
-        //TODO err.should.be.an.instanceOf(Errors.CONNECTION_ERROR);
+        err.should.be.an.instanceOf(Errors.CONNECTION_ERROR);
         done();
       });
     });
@@ -5771,7 +5770,7 @@ describe('client API', function() {
         should.exist(err);
         should.not.exist(body);
         should.not.exist(header);
-        //TODO err.should.be.an.instanceOf(Errors.ECONNRESET_ERROR);
+        err.should.be.an.instanceOf(Errors.ECONNRESET_ERROR);
         done();
       });
     });
