@@ -680,7 +680,7 @@ describe('client API', function() {
 
         (function() {
           var t = buildTx(txp);
-        }).should.throw('Illegal State');
+        }).should.throw('Fee too high');
       });
       it('should build a tx with multiple outputs', function() {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';

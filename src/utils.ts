@@ -226,11 +226,12 @@ export function verifyMessage(text: string, signature: string, pubKey: string): 
  * @return                Decrypted message
  */
 export function decryptMessage(cyphertextJson: string, encryptingKey: string): string {
+  if (!cyphertextJson) return;
   const key = sjcl.codec.base64.toBits(encryptingKey);
   try { 
     return sjcl.decrypt(key, cyphertextJson);
   } catch (e) {
-    log.warn(e);
+    log.warn(e.toString());
     throw e;
   };
 }

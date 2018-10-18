@@ -107,7 +107,7 @@ export class Verifier {
       try {
         decryptedMessage = decryptMessage(o2.message, encryptingKey);
       } catch (e) {
-        log.warn(e);
+        log.warn(e.toString());
         return false;
       }
       if (!strEqual(o1.message, decryptedMessage)) return false;

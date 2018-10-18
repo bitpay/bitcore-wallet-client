@@ -2,9 +2,7 @@ import * as _ from 'lodash';
 import * as sjcl from 'sjcl';
 import * as b from 'buffer';
 import * as Stringify from 'json-stable-stringify';
-import * as util from 'util';
 import * as async from 'async';
-import * as events from 'events';
 
 import * as url from'url';
 import * as querystring from 'querystring';
@@ -34,13 +32,13 @@ import {
 
 import { Logger } from './logger';
 const log = new Logger();
-const e = new events.EventEmitter();
+const EventEmitter = require('events');
 
-const Errors = require('./errors');
+var Errors = require('./errors');
 const Package = require('../package.json');
 const BASE_URL = 'http://localhost:3232/bws/api';
 
-export class Client {
+export class Client extends EventEmitter {
 
   public request;
   private baseUrl;
@@ -74,6 +72,7 @@ export class Client {
   private session;
 
   constructor(opts?) {
+    super();
 
     this.credentials = new Credentials();
     this._Verifier = new Verifier();
@@ -89,7 +88,6 @@ export class Client {
     this.supportStaffWalletId = opts.supportStaffWalletId;
 
     log.setLevel(this.logLevel);  
-    util.inherits(Client, events.EventEmitter);
 
     this.privateKeyEncryptionOpts = {
       iter: 10000
@@ -142,7 +140,7 @@ export class Client {
       }
 
       _.each(notifications, (notification) => {
-        e.emit('notification', notification);
+        this.emit('notification', notification);
       });
       return cb();
     });
@@ -746,7 +744,7 @@ export class Client {
 
       this.credentials.addPublicKeyRing(this._extractPublicKeyRing(wallet.copayers));
 
-      e.emit('walletCompleted', wallet);
+      this.emit('walletCompleted', wallet);
 
       return cb(null, ret);
     });
@@ -816,16 +814,16 @@ export class Client {
         return cb(new Errors.CONNECTION_ERROR);
       }
 
+      //TODO
+      /*
       if (res.body)
-
-        // TODO
-        /*log.debug(util.inspect(res.body, {
+        log.debug(util.inspect(res.body, {
           depth: 10
         }));*/
 
       if (res.status !== 200) {
         if (res.status === 404)
-          return new Errors.NOT_FOUND
+          return cb(new Errors.NOT_FOUND);
 
         if (!res.status)
           return cb(new Errors.CONNECTION_ERROR);
@@ -1330,7 +1328,7 @@ export class Client {
     this._doPostRequest('/v2/wallets/', args, (err, res) => {
       if (err) return cb(err);
 
-      const walletId = res.walletId;
+      const walletId = res['walletId'];
       this.credentials.addWalletInfo(walletId, walletName, m, n, copayerName);
       const secret = this._buildSecret(this.credentials.walletId, this.credentials.walletPrivKey, this.credentials.coin, this.credentials.network);
 
