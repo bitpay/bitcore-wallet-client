@@ -2,14 +2,14 @@ import * as _ from 'lodash';
 
 const DEFAULT_LOG_LEVEL = 'silent';
 const LEVELS = {
-    'silent': -1,
-    'debug': 0,
-    'info': 1,
-    'log': 2,
-    'warn': 3,
-    'error': 4,
-    'fatal': 5
-  };
+  silent: -1,
+  debug: 0,
+  info: 1,
+  log: 2,
+  warn: 3,
+  error: 4,
+  fatal: 5,
+};
 
 /**
  * A simple logger that wraps the <tt>console.log</tt> methods when available.
@@ -67,7 +67,6 @@ export class Logger {
     return this.processLog('debug', message, ...optionalParams);
   }
 
-
   /**
    * Log messages at the info level.
    * @param {string} The level name
@@ -75,7 +74,7 @@ export class Logger {
   public info(message?, ...optionalParams) {
     return this.processLog('info', message, ...optionalParams);
   }
-  
+
   /**
    * Log messages at an intermediary level called 'log'.
    * @param {string} The level name
@@ -83,7 +82,7 @@ export class Logger {
   public log(message?, ...optionalParams) {
     return this.processLog('log', message, ...optionalParams);
   }
-  
+
   /**
    * Log messages at the warn level.
    * @param {string} The level name
@@ -91,7 +90,7 @@ export class Logger {
   public warn(message?, ...optionalParams) {
     return this.processLog('warn', message, ...optionalParams);
   }
-  
+
   /**
    * Log messages at the error level.
    * @param {string} The level name
@@ -99,7 +98,7 @@ export class Logger {
   public error(message?, ...optionalParams) {
     return this.processLog('error', message, ...optionalParams);
   }
-  
+
   /**
    * Log messages at the fatal level.
    * @param {string} The level name

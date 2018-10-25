@@ -1,9 +1,9 @@
 import * as _ from 'lodash';
 
-import { expect } from 'chai';
+import {expect} from 'chai';
 import 'mocha';
 
-import { Logger } from './logger';
+import {Logger} from './logger';
 
 describe('Logs', () => {
   let originalLog;
@@ -37,5 +37,4 @@ describe('Logs', () => {
     let a = log.debug('Hello');
     expect(a).to.be.undefined;
   });
-
 });

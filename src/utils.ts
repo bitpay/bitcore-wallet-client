@@ -6,13 +6,13 @@ import * as Stringify from 'json-stable-stringify';
 import * as Bitcore from 'bitcore-lib';
 import * as BitcoreCash from 'bitcore-lib-cash';
 
-import { Constants } from './common/constants';
-import { Defaults } from './common/defaults';
-import { Logger } from './logger';
+import {Constants} from './common/constants';
+import {Defaults} from './common/defaults';
+import {Logger} from './logger';
 
 const Bitcore_ = {
   btc: Bitcore,
-  bch: BitcoreCash
+  bch: BitcoreCash,
 };
 
 const PrivateKey = Bitcore.PrivateKey;
@@ -22,7 +22,7 @@ const encoding = Bitcore.encoding;
 
 const log = new Logger();
 
-let SJCL: Function = ()=>{};
+let SJCL: Function = () => {};
 
 /**
  * Sign Public Key using an Extended Private Key
@@ -30,8 +30,13 @@ let SJCL: Function = ()=>{};
  * @param xPrivKey        Extended Private Key
  * @return                Signed Public Key
  */
-export function signRequestPubKey(requestPubKey: string, xPrivKey: string): string {
-  const priv = new Bitcore.HDPrivateKey(xPrivKey).deriveChild(Constants.PATHS.REQUEST_KEY_AUTH).privateKey;
+export function signRequestPubKey(
+  requestPubKey: string,
+  xPrivKey: string,
+): string {
+  const priv = new Bitcore.HDPrivateKey(xPrivKey).deriveChild(
+    Constants.PATHS.REQUEST_KEY_AUTH,
+  ).privateKey;
   return signMessage(requestPubKey, priv);
 }
 
@@ -42,14 +47,18 @@ export function signRequestPubKey(requestPubKey: string, xPrivKey: string): stri
  * @param opts        Optional<fullPrecision, thousandsSeparator, decimalSeparator>
  * @return            Formated amount
  */
-export function formatAmount(satoshis: number, unit: string, opts?: any): string {
+export function formatAmount(
+  satoshis: number,
+  unit: string,
+  opts?: any,
+): string {
   if (!_.includes(_.keys(Constants.UNITS), unit)) return;
 
   function clipDecimals(n, decimals) {
     const x = n.toString().split('.');
     const d = (x[1] || '0').substring(0, decimals);
     return parseFloat(x[0] + '.' + d);
-  };
+  }
 
   function addSeparators(nStr, thousands, decimal, minDecimals) {
     nStr = nStr.replace('.', decimal);
@@ -60,18 +69,26 @@ export function formatAmount(satoshis: number, unit: string, opts?: any): string
     x1 = _.dropRightWhile(x1, function(n, i) {
       return n == '0' && i >= minDecimals;
     }).join('');
-    
+
     const x2 = x.length > 1 ? decimal + x1 : '';
     x0 = x0.replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
     return x0 + x2;
-  };
+  }
 
   opts = opts || {};
 
   const u = Constants.UNITS[unit];
   const precision = opts.fullPrecision ? 'full' : 'short';
-  const amount = clipDecimals((satoshis / u.toSatoshis), u[precision].maxDecimals).toFixed(u[precision].maxDecimals);
-  return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u[precision].minDecimals);
+  const amount = clipDecimals(
+    satoshis / u.toSatoshis,
+    u[precision].maxDecimals,
+  ).toFixed(u[precision].maxDecimals);
+  return addSeparators(
+    amount,
+    opts.thousandsSeparator || ',',
+    opts.decimalSeparator || '.',
+    u[precision].minDecimals,
+  );
 }
 
 /**
@@ -105,12 +122,16 @@ export function buildTx(txp) {
   } else if (txp.outputs) {
     _.each(txp.outputs, function(o) {
       if (!o.script && !o.toAddress)
-        throw new Error('Output should have either toAddress or script specified');
+        throw new Error(
+          'Output should have either toAddress or script specified',
+        );
       if (o.script) {
-        t.addOutput(new bitcore.Transaction.Output({
-          script: o.script,
-          satoshis: o.amount
-        }));
+        t.addOutput(
+          new bitcore.Transaction.Output({
+            script: o.script,
+            satoshis: o.amount,
+          }),
+        );
       } else {
         t.to(o.toAddress, o.amount);
       }
@@ -135,15 +156,22 @@ export function buildTx(txp) {
   }
 
   // Validate inputs vs outputs independently of Bitcore
-  var totalInputs = _.reduce(txp.inputs, function(memo, i) {
-    return +i.satoshis + memo;
-  }, 0);
-  var totalOutputs = _.reduce(t.outputs, function(memo, o) {
-    return +o.satoshis + memo;
-  }, 0);
+  var totalInputs = _.reduce(
+    txp.inputs,
+    function(memo, i) {
+      return +i.satoshis + memo;
+    },
+    0,
+  );
+  var totalOutputs = _.reduce(
+    t.outputs,
+    function(memo, o) {
+      return +o.satoshis + memo;
+    },
+    0,
+  );
 
-  if (totalInputs - totalOutputs < 0)
-    throw new Error('Fee too low');
+  if (totalInputs - totalOutputs < 0) throw new Error('Fee too low');
   if (totalInputs - totalOutputs > Defaults.MAX_TX_FEE)
     throw new Error('Fee too high');
 
@@ -160,7 +188,14 @@ export function buildTx(txp) {
  * @param coin              btc or bch
  * @return                  Object<address,path,publicKeys>
  */
-export function deriveAddress(scriptType: string, publicKeyRing: Array<object>, path: string, m: number, network: string, coin: string) {
+export function deriveAddress(
+  scriptType: string,
+  publicKeyRing: Array<object>,
+  path: string,
+  m: number,
+  network: string,
+  coin: string,
+) {
   if (!_.includes(_.values(Constants.SCRIPT_TYPES), scriptType)) return;
 
   coin = coin || 'btc';
@@ -195,7 +230,11 @@ export function deriveAddress(scriptType: string, publicKeyRing: Array<object>, 
  * @param requestPubKey   Request Public Key
  * @return                Hash for Copayer name, Extended Public Key and Request Public Key
  */
-export function getCopayerHash(name: string, xPubKey: string, requestPubKey: string): string {
+export function getCopayerHash(
+  name: string,
+  xPubKey: string,
+  requestPubKey: string,
+): string {
   return [name, xPubKey, requestPubKey].join('|');
 }
 
@@ -206,9 +245,13 @@ export function getCopayerHash(name: string, xPubKey: string, requestPubKey: str
  * @param pubKey        Your Public Key
  * @return              Return true for verified and false for unverified
  */
-export function verifyMessage(text: string, signature: string, pubKey: string): boolean {
+export function verifyMessage(
+  text: string,
+  signature: string,
+  pubKey: string,
+): boolean {
   if (!signature) return false;
-  
+
   const pub = new PublicKey(pubKey);
   const hash = hashMessage(text);
 
@@ -218,7 +261,7 @@ export function verifyMessage(text: string, signature: string, pubKey: string): 
   } catch (e) {
     log.warn(e);
     return false;
-  };
+  }
 }
 
 /**
@@ -227,15 +270,18 @@ export function verifyMessage(text: string, signature: string, pubKey: string): 
  * @param encryptingKey   Key to encrypt (or password)
  * @return                Decrypted message
  */
-export function decryptMessage(cyphertextJson: string, encryptingKey: string): string {
+export function decryptMessage(
+  cyphertextJson: string,
+  encryptingKey: string,
+): string {
   if (!cyphertextJson) return;
   const key = sjcl.codec.base64.toBits(encryptingKey);
-  try { 
+  try {
     return sjcl.decrypt(key, cyphertextJson);
   } catch (e) {
     log.warn(e.toString());
     throw e;
-  };
+  }
 }
 
 /**
@@ -258,7 +304,9 @@ export function xPubToCopayerId(coin: string, xpub: string): string {
  * @return                  If verified returns true, else false
  */
 export function verifyRequestPubKey(requestPubKey, signature, xPubKey) {
-  const pub = (new Bitcore.HDPublicKey(xPubKey)).deriveChild(Constants.PATHS.REQUEST_KEY_AUTH).publicKey;
+  const pub = new Bitcore.HDPublicKey(xPubKey).deriveChild(
+    Constants.PATHS.REQUEST_KEY_AUTH,
+  ).publicKey;
   return verifyMessage(requestPubKey, signature, pub.toString());
 }
 
@@ -294,10 +342,17 @@ export function signMessage(text: string, privKey: string): string {
  */
 export function encryptMessage(message: string, encryptingKey: string): string {
   const key = sjcl.codec.base64.toBits(encryptingKey);
-  return sjcl.encrypt(key, message, _.defaults({
-    ks: 128,
-    iter: 1,
-  }, SJCL));
+  return sjcl.encrypt(
+    key,
+    message,
+    _.defaults(
+      {
+        ks: 128,
+        iter: 1,
+      },
+      SJCL,
+    ),
+  );
 }
 
 /**
@@ -306,11 +361,14 @@ export function encryptMessage(message: string, encryptingKey: string): string {
  * @param encryptingKey     Password
  * @return                  Decrypted message or string (No Throw)
  */
-export function decryptMessageNoThrow(cyphertextJson: string, encryptingKey: string): string {
+export function decryptMessageNoThrow(
+  cyphertextJson: string,
+  encryptingKey: string,
+): string {
   function isJsonString(str) {
     let r;
     try {
-      r=JSON.parse(str);
+      r = JSON.parse(str);
     } catch (e) {
       log.warn(e);
       return false;
@@ -318,15 +376,13 @@ export function decryptMessageNoThrow(cyphertextJson: string, encryptingKey: str
     return r;
   }
 
-  if (!encryptingKey)
-    return '<ECANNOTDECRYPT>';
+  if (!encryptingKey) return '<ECANNOTDECRYPT>';
 
-  if (!cyphertextJson)
-    return '';
+  if (!cyphertextJson) return '';
 
   // no sjcl encrypted json
   const r = isJsonString(cyphertextJson);
-  if (!r|| !r.iv || !r.ct) {
+  if (!r || !r.iv || !r.ct) {
     return cyphertextJson;
   }
 
@@ -343,10 +399,15 @@ export function decryptMessageNoThrow(cyphertextJson: string, encryptingKey: str
  * @param proposalHeader    Proposal header
  * @return                  Proposal hash (String)
  */
-export function getProposalHash(toAddress: any, amount?: number, message?: any, payProUrl?: string): string {
+export function getProposalHash(
+  toAddress: any,
+  amount?: number,
+  message?: any,
+  payProUrl?: string,
+): string {
   function getOldHash(toAddress, amount, message, payProUrl) {
-    return [toAddress, amount, (message || ''), (payProUrl || '')].join('|');
-  };
+    return [toAddress, amount, message || '', payProUrl || ''].join('|');
+  }
 
   // For backwards compatibility
   if (arguments.length > 1) {
@@ -367,5 +428,7 @@ export function privateKeyToAESKey(privKey: string) {
     return;
   }
   const pk = Bitcore.PrivateKey.fromString(privKey);
-  return Bitcore.crypto.Hash.sha256(pk.toBuffer()).slice(0, 16).toString('base64');
+  return Bitcore.crypto.Hash.sha256(pk.toBuffer())
+    .slice(0, 16)
+    .toString('base64');
 }

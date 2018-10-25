@@ -1,20 +1,16 @@
 import * as _ from 'lodash';
 import * as sjcl from 'sjcl';
 
-
 import * as Bitcore from 'bitcore-lib';
 import * as Mnemonic from 'bitcore-mnemonic';
 
-import { Constants } from './common/constants';
-import { 
-  xPubToCopayerId,
-  privateKeyToAESKey
-} from './utils';
+import {Constants} from './common/constants';
+import {xPubToCopayerId, privateKeyToAESKey} from './utils';
 
 interface Key {
-  xPrivKey?: string,
-  mnemonic?: string
-};
+  xPrivKey?: string;
+  mnemonic?: string;
+}
 
 export interface Credential {
   account: number;
@@ -46,26 +42,20 @@ export interface Credential {
   addressType?: string;
   hwInfo?: string;
   entropySourcePath?: string;
-};
+}
 
 const WORDS_FOR_LANGUAGE = {
-  'en': Mnemonic.Words.ENGLISH,
-  'es': Mnemonic.Words.SPANISH,
-  'ja': Mnemonic.Words.JAPANESE,
-  'zh': Mnemonic.Words.CHINESE,
-  'fr': Mnemonic.Words.FRENCH,
-  'it': Mnemonic.Words.ITALIAN,
+  en: Mnemonic.Words.ENGLISH,
+  es: Mnemonic.Words.SPANISH,
+  ja: Mnemonic.Words.JAPANESE,
+  zh: Mnemonic.Words.CHINESE,
+  fr: Mnemonic.Words.FRENCH,
+  it: Mnemonic.Words.ITALIAN,
 };
 
-const AVAILABLE_COINS = [
-  'btc', 
-  'bch'
-];
+const AVAILABLE_COINS = ['btc', 'bch'];
 
-const AVAILABLE_NETWORKS = [
-  'livenet',
-  'testnet'
-];
+const AVAILABLE_NETWORKS = ['livenet', 'testnet'];
 
 export class Credentials implements Credential {
   account = 0;
@@ -134,7 +124,7 @@ export class Credentials implements Credential {
       compliantDerivation: this.compliantDerivation,
       addressType: this.addressType,
       hwInfo: this.hwInfo,
-      entropySourcePath: this.entropySourcePath
+      entropySourcePath: this.entropySourcePath,
     };
   }
 
@@ -145,7 +135,8 @@ export class Credentials implements Credential {
   private setCredential(c: Credential) {
     this.account = c.account || 0;
     this.version = c.version || '1';
-    this.derivationStrategy = c.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
+    this.derivationStrategy =
+      c.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
     this.coin = c.coin || 'btc';
     this.network = c.network;
     this.xPrivKey = c.xPrivKey;
@@ -189,7 +180,8 @@ export class Credentials implements Credential {
    * @return  {void}
    */
   private checkNetwork(network: string): void {
-    if (!_.includes(AVAILABLE_NETWORKS, network)) throw new Error('Invalid network');
+    if (!_.includes(AVAILABLE_NETWORKS, network))
+      throw new Error('Invalid network');
   }
 
   /**
@@ -207,7 +199,10 @@ export class Credentials implements Credential {
    * @return  {void}
    */
   private checkDerivationStrategy(derivationStrategy: string): void {
-    if (!_.includes(_.values(Constants.DERIVATION_STRATEGIES), derivationStrategy)) throw new Error('Unknown Derivation Strategy');
+    if (
+      !_.includes(_.values(Constants.DERIVATION_STRATEGIES), derivationStrategy)
+    )
+      throw new Error('Unknown Derivation Strategy');
   }
 
   /**
@@ -217,7 +212,8 @@ export class Credentials implements Credential {
    */
   private checkEntropyBuffer(entropyBuffer: any): void {
     //require at least 112 bits of entropy
-    if (entropyBuffer.length < 14) throw new Error('At least 112 bits of entropy are needed');
+    if (entropyBuffer.length < 14)
+      throw new Error('At least 112 bits of entropy are needed');
   }
 
   /**
@@ -231,7 +227,7 @@ export class Credentials implements Credential {
 
     this.coin = coin;
     this.network = network;
-    this.xPrivKey = (new Bitcore.HDPrivateKey(network)).toString();
+    this.xPrivKey = new Bitcore.HDPrivateKey(network).toString();
     this.compliantDerivation = true;
     this.expand();
   }
@@ -245,17 +241,24 @@ export class Credentials implements Credential {
    * @param   {number}        Account
    * @param   {any}           Opts
    */
-  public createWithMnemonic(coin: string, network: string, passphrase: string, language: string, account: number, opts?: any) {
+  public createWithMnemonic(
+    coin: string,
+    network: string,
+    passphrase: string,
+    language: string,
+    account: number,
+    opts?: any,
+  ) {
     this.checkCoin(coin);
     this.checkNetwork(network);
     this.checkLanguage(language);
-    
+
     opts = opts || {};
 
     let m = new Mnemonic(WORDS_FOR_LANGUAGE[language]);
     while (!Mnemonic.isValid(m.toString())) {
-      m = new Mnemonic(WORDS_FOR_LANGUAGE[language])
-    };
+      m = new Mnemonic(WORDS_FOR_LANGUAGE[language]);
+    }
 
     this.coin = coin;
     this.network = network;
@@ -275,7 +278,13 @@ export class Credentials implements Credential {
    * @param   {String}      Derivation Strategy
    * @param   {Any}         Opts
    */
-  public fromExtendedPrivateKey(coin: string, xPrivKey: string, account: number, derivationStrategy: string, opts?: any) {
+  public fromExtendedPrivateKey(
+    coin: string,
+    xPrivKey: string,
+    account: number,
+    derivationStrategy: string,
+    opts?: any,
+  ) {
     this.checkCoin(coin);
     this.checkDerivationStrategy(derivationStrategy);
 
@@ -304,7 +313,15 @@ export class Credentials implements Credential {
    * @param   {string}        Derivation Strategy
    * @param   {any}           Options
    */
-  public fromMnemonic(coin: string, network: string, words: string, passphrase: string, account: number, derivationStrategy: string, opts?: any) {
+  public fromMnemonic(
+    coin: string,
+    network: string,
+    words: string,
+    passphrase: string,
+    account: number,
+    derivationStrategy: string,
+    opts?: any,
+  ) {
     this.checkCoin(coin);
     this.checkNetwork(network);
     this.checkDerivationStrategy(derivationStrategy);
@@ -347,7 +364,15 @@ export class Credentials implements Credential {
    * @param   {string}      Derivation Strategy
    * @param   {any}         Opts
    */
-  public fromExtendedPublicKey(coin: string, xPubKey: string, source: string, entropySourceHex: string, account: number, derivationStrategy: string, opts?: any) {
+  public fromExtendedPublicKey(
+    coin: string,
+    xPubKey: string,
+    source: string,
+    entropySourceHex: string,
+    account: number,
+    derivationStrategy: string,
+    opts?: any,
+  ) {
     this.checkCoin(coin);
     this.checkDerivationStrategy(derivationStrategy);
 
@@ -358,7 +383,9 @@ export class Credentials implements Credential {
 
     this.coin = coin;
     this.xPubKey = xPubKey;
-    this.entropySource = Bitcore.crypto.Hash.sha256sha256(entropyBuffer).toString('hex');
+    this.entropySource = Bitcore.crypto.Hash.sha256sha256(
+      entropyBuffer,
+    ).toString('hex');
     this.account = account;
     this.derivationStrategy = derivationStrategy;
     this.externalSource = source;
@@ -371,7 +398,7 @@ export class Credentials implements Credential {
    * @param   {string}   xKey
    * @return  {string}   Network
    */
-  private getNetworkFromExtendedKey(xKey:string): string {
+  private getNetworkFromExtendedKey(xKey: string): string {
     return xKey.charAt(0) == 't' ? 'testnet' : 'livenet';
   }
 
@@ -396,7 +423,9 @@ export class Credentials implements Credential {
     // TODO precondition
     //$.checkState(this.xPrivKey || (this.xPubKey && this.entropySource));
 
-    const network = this.getNetworkFromExtendedKey(this.xPrivKey || this.xPubKey);
+    const network = this.getNetworkFromExtendedKey(
+      this.xPrivKey || this.xPubKey,
+    );
     if (this.network) {
       // TODO precondition
       //$.checkState(this.network == network);
@@ -411,7 +440,9 @@ export class Credentials implements Credential {
     if (this.xPrivKey) {
       xPrivKey = new Bitcore.HDPrivateKey.fromString(this.xPrivKey);
 
-      deriveFn = this.compliantDerivation ? _.bind(xPrivKey.deriveChild, xPrivKey) : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
+      deriveFn = this.compliantDerivation
+        ? _.bind(xPrivKey.deriveChild, xPrivKey)
+        : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
 
       const derivedXPrivKey = deriveFn(this.getBaseAddressDerivationPath());
 
@@ -420,12 +451,14 @@ export class Credentials implements Credential {
     }
 
     // requests keys from mnemonics, but using a xPubkey
-    // This is only used when importing mnemonics FROM 
+    // This is only used when importing mnemonics FROM
     // an hwwallet, in which xPriv was not available when
     // the wallet was created.
     if (this.entropySourcePath) {
       const seed = deriveFn(this.entropySourcePath).publicKey.toBuffer();
-      this.entropySource = Bitcore.crypto.Hash.sha256sha256(seed).toString('hex');
+      this.entropySource = Bitcore.crypto.Hash.sha256sha256(seed).toString(
+        'hex',
+      );
     }
 
     if (this.entropySource) {
@@ -442,16 +475,23 @@ export class Credentials implements Credential {
       const pubKey = requestDerivation.publicKey;
       this.requestPubKey = pubKey.toString();
 
-      this.entropySource = Bitcore.crypto.Hash.sha256(requestDerivation.privateKey.toBuffer()).toString('hex');
+      this.entropySource = Bitcore.crypto.Hash.sha256(
+        requestDerivation.privateKey.toBuffer(),
+      ).toString('hex');
     }
 
-    this.personalEncryptingKey = this.hashFromEntropy('personalKey', 16).toString('base64');
+    this.personalEncryptingKey = this.hashFromEntropy(
+      'personalKey',
+      16,
+    ).toString('base64');
 
     this.copayerId = xPubToCopayerId(this.coin, this.xPubKey);
-    this.publicKeyRing = [{
-      xPubKey: this.xPubKey,
-      requestPubKey: this.requestPubKey,
-    }];
+    this.publicKeyRing = [
+      {
+        xPubKey: this.xPubKey,
+        requestPubKey: this.requestPubKey,
+      },
+    ];
   }
 
   /**
@@ -459,7 +499,7 @@ export class Credentials implements Credential {
    * @param   {any}        Object
    */
   public fromObj(obj: any) {
-    let c: Credential = this.getCredential()
+    let c: Credential = this.getCredential();
     _.assign(c, obj);
 
     this.setCredential(c);
@@ -494,8 +534,8 @@ export class Credentials implements Credential {
         break;
     }
 
-    const coin = (this.network == 'livenet' ? "0" : "1");
-    return "m/" + purpose + "'/" + coin + "'/" + this.account + "'";
+    const coin = this.network == 'livenet' ? '0' : '1';
+    return 'm/' + purpose + "'/" + coin + "'/" + this.account + "'";
   }
 
   /**
@@ -505,8 +545,13 @@ export class Credentials implements Credential {
    */
   public getDerivedXPrivKey(password?: string): any {
     const path = this.getBaseAddressDerivationPath();
-    const xPrivKey = new Bitcore.HDPrivateKey(this.getKeys(password).xPrivKey, this.network);
-    const deriveFn = !!this.compliantDerivation ? _.bind(xPrivKey.deriveChild, xPrivKey) : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
+    const xPrivKey = new Bitcore.HDPrivateKey(
+      this.getKeys(password).xPrivKey,
+      this.network,
+    );
+    const deriveFn = !!this.compliantDerivation
+      ? _.bind(xPrivKey.deriveChild, xPrivKey)
+      : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
     return deriveFn(path);
   }
 
@@ -530,19 +575,23 @@ export class Credentials implements Credential {
    * @param   {string}    Wallet Private Key
    * @return  {void}
    */
-  public addWalletInfo(walletId: number, walletName: string, m: number, n: number, copayerName?: string): void {
+  public addWalletInfo(
+    walletId: number,
+    walletName: string,
+    m: number,
+    n: number,
+    copayerName?: string,
+  ): void {
     this.walletId = walletId;
     this.walletName = walletName;
     this.m = m;
     this.n = n;
 
-    if (copayerName)
-      this.copayerName = copayerName;
+    if (copayerName) this.copayerName = copayerName;
 
     if (this.derivationStrategy == 'BIP44' && n == 1)
       this.addressType = Constants.SCRIPT_TYPES.P2PKH;
-    else
-      this.addressType = Constants.SCRIPT_TYPES.P2SH;
+    else this.addressType = Constants.SCRIPT_TYPES.P2SH;
 
     // Use m/48' for multisig hardware wallets
     if (!this.xPrivKey && this.externalSource && n > 1) {
@@ -550,10 +599,12 @@ export class Credentials implements Credential {
     }
 
     if (n == 1) {
-      this.addPublicKeyRing([{
-        xPubKey: this.xPubKey,
-        requestPubKey: this.requestPubKey,
-      }]);
+      this.addPublicKeyRing([
+        {
+          xPubKey: this.xPubKey,
+          requestPubKey: this.requestPubKey,
+        },
+      ]);
     }
   }
 
@@ -570,7 +621,7 @@ export class Credentials implements Credential {
    * @return {boolean} True or False
    */
   public isPrivKeyEncrypted(): boolean {
-    return (!!this.xPrivKeyEncrypted) && !this.xPrivKey;
+    return !!this.xPrivKeyEncrypted && !this.xPrivKey;
   }
 
   /**
@@ -582,13 +633,10 @@ export class Credentials implements Credential {
     if (this.xPrivKeyEncrypted)
       throw new Error('Private key already encrypted');
 
-    if (!this.xPrivKey)
-      throw new Error('No private key to encrypt');
-
+    if (!this.xPrivKey) throw new Error('No private key to encrypt');
 
     this.xPrivKeyEncrypted = sjcl.encrypt(password, this.xPrivKey, opts);
-    if (!this.xPrivKeyEncrypted)
-      throw new Error('Could not encrypt');
+    if (!this.xPrivKeyEncrypted) throw new Error('Could not encrypt');
 
     if (this.mnemonic)
       this.mnemonicEncrypted = sjcl.encrypt(password, this.mnemonic, opts);
@@ -628,7 +676,8 @@ export class Credentials implements Credential {
     let keys: Key = {};
 
     if (this.isPrivKeyEncrypted()) {
-      if (!password) throw new Error('Private keys are encrypted, a password is needed');
+      if (!password)
+        throw new Error('Private keys are encrypted, a password is needed');
       try {
         keys.xPrivKey = sjcl.decrypt(password, this.xPrivKeyEncrypted);
 
@@ -659,7 +708,7 @@ export class Credentials implements Credential {
    * @return {boolean}  True or False
    */
   public canSign(): boolean {
-    return (!!this.xPrivKey || !!this.xPrivKeyEncrypted);
+    return !!this.xPrivKey || !!this.xPrivKeyEncrypted;
   }
 
   /**
@@ -679,7 +728,8 @@ export class Credentials implements Credential {
    */
   public isComplete(): boolean {
     if (!this.m || !this.n) return false;
-    if (!this.publicKeyRing || this.publicKeyRing.length != this.n) return false;
+    if (!this.publicKeyRing || this.publicKeyRing.length != this.n)
+      return false;
     return true;
   }
 
@@ -688,7 +738,7 @@ export class Credentials implements Credential {
    * @return {boolean}  True or False
    */
   public hasExternalSource(): boolean {
-    return !!(typeof this.externalSource == "string");
+    return !!(typeof this.externalSource == 'string');
   }
 
   /**
@@ -704,7 +754,7 @@ export class Credentials implements Credential {
    * @return {string}  Mnemonic
    */
   public getMnemonic(): string {
-    if (this.mnemonicEncrypted && !this.mnemonic) 
+    if (this.mnemonicEncrypted && !this.mnemonic)
       throw new Error('Credentials are encrypted');
     return this.mnemonic;
   }
@@ -723,12 +773,14 @@ export class Credentials implements Credential {
    * @param   {any}           Object Wallet
    */
   public fromOldCopayWallet(w: any) {
-    let walletPrivKeyFromOldCopayWallet = (w) => {
-      // IN BWS, the master Pub Keys are not sent to the server, 
+    let walletPrivKeyFromOldCopayWallet = w => {
+      // IN BWS, the master Pub Keys are not sent to the server,
       // so it is safe to use them as seed for wallet's shared secret.
       const seed = w.publicKeyRing.copayersExtPubKeys.sort().join('');
       const seedBuf = new Buffer(seed);
-      const privKey = new Bitcore.PrivateKey.fromBuffer(Bitcore.crypto.Hash.sha256(seedBuf));
+      const privKey = new Bitcore.PrivateKey.fromBuffer(
+        Bitcore.crypto.Hash.sha256(seedBuf),
+      );
       return privKey.toString();
     };
 
@@ -738,21 +790,27 @@ export class Credentials implements Credential {
     this.expand();
 
     this.addWalletPrivateKey(walletPrivKeyFromOldCopayWallet(w));
-    this.addWalletInfo(w.opts.id, w.opts.name, w.opts.requiredCopayers, w.opts.totalCopayers, '');
+    this.addWalletInfo(
+      w.opts.id,
+      w.opts.name,
+      w.opts.requiredCopayers,
+      w.opts.totalCopayers,
+      '',
+    );
 
-    let pkr = _.map(w.publicKeyRing.copayersExtPubKeys, (xPubStr) => {
-
+    let pkr = _.map(w.publicKeyRing.copayersExtPubKeys, xPubStr => {
       const isMe = xPubStr === this.xPubKey;
       let requestDerivation;
 
       if (isMe) {
         const path = Constants.PATHS.REQUEST_KEY;
-        requestDerivation = (new Bitcore.HDPrivateKey(this.xPrivKey))
-          .deriveChild(path).hdPublicKey;
+        requestDerivation = new Bitcore.HDPrivateKey(this.xPrivKey).deriveChild(
+          path,
+        ).hdPublicKey;
       } else {
-        // this 
+        // this
         const path = Constants.PATHS.REQUEST_KEY_AUTH;
-        requestDerivation = (new Bitcore.HDPublicKey(xPubStr)).deriveChild(path);
+        requestDerivation = new Bitcore.HDPublicKey(xPubStr).deriveChild(path);
       }
 
       // Grab Copayer Name
@@ -772,4 +830,3 @@ export class Credentials implements Credential {
     this.addPublicKeyRing(pkr);
   }
 }
-

@@ -55,8 +55,8 @@ export class Client extends EventEmitter {
   //TODO removed type Credentials
   public credentials;
 
-  private _Verifier;
-  private _PayPro;
+  private verifier;
+  private paypro;
 
   public Bitcore = Bitcore;
 
@@ -73,8 +73,8 @@ export class Client extends EventEmitter {
     super();
 
     this.credentials = new Credentials();
-    this._Verifier = new Verifier();
-    this._PayPro = new PayPro();
+    this.verifier = new Verifier();
+    this.paypro = new PayPro();
 
     opts = opts || {};
     this.request = opts.request || request;
@@ -848,7 +848,7 @@ export class Client extends EventEmitter {
       if (wallet.status != 'complete') return cb();
 
       if (this.credentials.walletPrivKey) {
-        if (!this._Verifier.checkCopayers(this.credentials, wallet.copayers)) {
+        if (!this.verifier.checkCopayers(this.credentials, wallet.copayers)) {
           return cb(new Errors.SERVER_COMPROMISED());
         }
       } else {
@@ -1850,7 +1850,7 @@ export class Client extends EventEmitter {
     //$.checkArgument(opts)
     //.checkArgument(opts.payProUrl);
 
-    this._PayPro.get(
+    this.paypro.get(
       {
         url: opts.payProUrl,
         http: this.payProHttp,
@@ -1940,7 +1940,7 @@ export class Client extends EventEmitter {
 
       this._processTxps(txp);
       if (
-        !this._Verifier.checkProposalCreation(
+        !this.verifier.checkProposalCreation(
           args,
           txp,
           this.credentials.sharedEncryptingKey,
@@ -2009,7 +2009,7 @@ export class Client extends EventEmitter {
     this._doPostRequest('/v3/addresses/', opts, (err, address) => {
       if (err) return cb(err);
 
-      if (!this._Verifier.checkAddress(this.credentials, address)) {
+      if (!this.verifier.checkAddress(this.credentials, address)) {
         return cb(new Errors.SERVER_COMPROMISED());
       }
 
@@ -2047,7 +2047,7 @@ export class Client extends EventEmitter {
 
       if (!opts.doNotVerify) {
         let fake = _.some(addresses, address => {
-          return !this._Verifier.checkAddress(this.credentials, address);
+          return !this.verifier.checkAddress(this.credentials, address);
         });
         if (fake) {
           return cb(new Errors.SERVER_COMPROMISED());
@@ -2120,7 +2120,7 @@ export class Client extends EventEmitter {
         (txp, acb) => {
           if (opts.doNotVerify) return acb(true);
           this.getPayPro(txp, (err, paypro) => {
-            const isLegit = this._Verifier.checkTxProposal(
+            const isLegit = this.verifier.checkTxProposal(
               this.credentials,
               txp,
               {
@@ -2163,7 +2163,7 @@ export class Client extends EventEmitter {
   public getPayPro(txp, cb) {
     if (!txp.payProUrl || this.doNotVerifyPayPro) return cb();
 
-    this._PayPro.get(
+    this.paypro.get(
       {
         url: txp.payProUrl,
         http: this.payProHttp,
@@ -2204,7 +2204,7 @@ export class Client extends EventEmitter {
     this.getPayPro(txp, (err, paypro) => {
       if (err) return cb(err);
 
-      let isLegit = this._Verifier.checkTxProposal(this.credentials, txp, {
+      let isLegit = this.verifier.checkTxProposal(this.credentials, txp, {
         paypro: paypro,
       });
 
@@ -2272,7 +2272,7 @@ export class Client extends EventEmitter {
     this.credentials.addressType = txp.addressType;
     this.credentials.addPublicKeyRing(publicKeyRing);
 
-    if (!this._Verifier.checkTxProposalSignature(this.credentials, txp))
+    if (!this.verifier.checkTxProposalSignature(this.credentials, txp))
       throw new Error('Fake transaction proposal');
 
     return this._signTxp(txp, password);
@@ -2341,7 +2341,7 @@ export class Client extends EventEmitter {
     newClient.credentials.addressType = txp.addressType;
     newClient.credentials.addPublicKeyRing(publicKeyRing);
 
-    if (!this._Verifier.checkTxProposalSignature(newClient.credentials, txp))
+    if (!this.verifier.checkTxProposalSignature(newClient.credentials, txp))
       throw new Error('Fake transaction proposal');
 
     return newClient._signTxp(txp, null);
@@ -2421,7 +2421,7 @@ export class Client extends EventEmitter {
         let t = buildTx(txp);
         this._applyAllSignatures(txp, t);
 
-        this._PayPro.send(
+        this.paypro.send(
           {
             http: this.payProHttp,
             url: txp.payProUrl,

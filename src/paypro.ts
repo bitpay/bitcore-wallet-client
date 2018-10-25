@@ -6,18 +6,17 @@ import * as BitcorePayPro from 'bitcore-payment-protocol';
 import * as Http from 'http';
 import * as Https from 'https';
 
-import { Logger } from './logger';
+import {Logger} from './logger';
 const log = new Logger();
 
 export class PayPro {
   private Bitcore_ = {
     btc: Bitcore,
-    bch: BitcoreCash
+    bch: BitcoreCash,
   };
 
-  constructor() {
-  }
-  
+  constructor() {}
+
   private nodeRequest(opts, cb) {
     opts.agent = false;
     const http = opts.httpNode || (opts.proto === 'http' ? Http : Https);
@@ -27,14 +26,22 @@ export class PayPro {
     http[fn](opts, function(res) {
       let data: any = []; // List of Buffer objects
 
-
       if (res.statusCode != 200)
-        return cb(new Error('HTTP Request Error: '  + res.statusCode + ' ' + res.statusMessage + ' ' +  ( data ? data : '' )  ));
+        return cb(
+          new Error(
+            'HTTP Request Error: ' +
+              res.statusCode +
+              ' ' +
+              res.statusMessage +
+              ' ' +
+              (data ? data : ''),
+          ),
+        );
 
-      res.on("data", function(chunk) {
+      res.on('data', function(chunk) {
         data.push(chunk); // Append Buffer object
       });
-      res.on("end", function() {
+      res.on('end', function() {
         data = b.Buffer.concat(data); // Make one large Buffer of it
         return cb(null, data);
       });
@@ -65,7 +72,16 @@ export class PayPro {
       if (xhr.status == 200) {
         return cb(null, new Uint8Array(response));
       } else {
-        return cb('HTTP Request Error: '  + xhr.status + ' ' + xhr.statusText + ' ' + response ? response : '');
+        return cb(
+          'HTTP Request Error: ' +
+          xhr.status +
+          ' ' +
+          xhr.statusText +
+          ' ' +
+          response
+            ? response
+            : '',
+        );
       }
     };
 
@@ -87,7 +103,9 @@ export class PayPro {
   }
 
   private getHttp(opts) {
-    const match = opts.url.match(/^((http[s]?):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/);
+    const match = opts.url.match(
+      /^((http[s]?):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/,
+    );
 
     opts.proto = RegExp.$2;
     opts.host = RegExp.$3;
@@ -118,7 +136,7 @@ export class PayPro {
     const PP = new BitcorePayPro(COIN);
 
     opts.headers = opts.headers || {
-      'Accept': BitcorePayPro.LEGACY_PAYMENT[COIN].REQUEST_CONTENT_TYPE,
+      Accept: BitcorePayPro.LEGACY_PAYMENT[COIN].REQUEST_CONTENT_TYPE,
       'Content-Type': 'application/octet-stream',
     };
 
@@ -137,13 +155,19 @@ export class PayPro {
       }
 
       // Get the payment details
-      let decodedDetails = BitcorePayPro.PaymentDetails.decode(serializedDetails);
+      let decodedDetails = BitcorePayPro.PaymentDetails.decode(
+        serializedDetails,
+      );
       let pd = new BitcorePayPro();
       pd = pd.makePaymentDetails(decodedDetails);
 
       let outputs = pd.get('outputs');
       if (outputs.length > 1)
-        return cb(new Error('Payment Protocol Error: Requests with more that one output are not supported'))
+        return cb(
+          new Error(
+            'Payment Protocol Error: Requests with more that one output are not supported',
+          ),
+        );
 
       let output = outputs[0];
 
@@ -158,7 +182,10 @@ export class PayPro {
       // is only an ArrayBuffer
       let buffer = new Buffer(new Uint8Array(output.get('script').buffer));
       let scriptBuf = buffer.slice(offset, limit);
-      let addr = new bitcore.Address.fromScript(new bitcore.Script(scriptBuf), network);
+      let addr = new bitcore.Address.fromScript(
+        new bitcore.Script(scriptBuf),
+        network,
+      );
 
       let md = pd.get('merchant_data');
 
@@ -187,13 +214,12 @@ export class PayPro {
         network: network,
         domain: opts.host,
         url: opts.url,
-        requiredFeeRate: pd.get('required_fee_rate')
+        requiredFeeRate: pd.get('required_fee_rate'),
       };
 
       return cb(null, ret);
     });
   }
-
 
   private getPayProRefundOutputs(addrStr, amount, coin) {
     amount = amount.toString(10);
@@ -217,8 +243,13 @@ export class PayPro {
     return [output];
   }
 
-
-  public createPayment = function(merchant_data, rawTx, refundAddr, amountSat, coin) {
+  public createPayment = function(
+    merchant_data,
+    rawTx,
+    refundAddr,
+    amountSat,
+    coin,
+  ) {
     let pay = new BitcorePayPro();
     pay = pay.makePayment();
 
@@ -230,9 +261,12 @@ export class PayPro {
     const txBuf = new Buffer(rawTx, 'hex');
     pay.set('transactions', [txBuf]);
 
-    const refund_outputs = this.getPayProRefundOutputs(refundAddr, amountSat, coin);
-    if (refund_outputs)
-      pay.set('refund_to', refund_outputs);
+    const refund_outputs = this.getPayProRefundOutputs(
+      refundAddr,
+      amountSat,
+      coin,
+    );
+    if (refund_outputs) pay.set('refund_to', refund_outputs);
 
     // Unused for now
     // options.memo = '';
@@ -246,20 +280,33 @@ export class PayPro {
     }
 
     return view;
-  }
+  };
 
   public send(opts, cb) {
-    if (!opts.merchant_data || !opts.url || !opts.rawTx || !opts.refundAddr || !opts.amountSat) return;
+    if (
+      !opts.merchant_data ||
+      !opts.url ||
+      !opts.rawTx ||
+      !opts.refundAddr ||
+      !opts.amountSat
+    )
+      return;
 
     const coin = opts.coin || 'btc';
     const COIN = coin.toUpperCase();
 
-    const payment = this.createPayment(opts.merchant_data, opts.rawTx, opts.refundAddr, opts.amountSat, coin);
+    const payment = this.createPayment(
+      opts.merchant_data,
+      opts.rawTx,
+      opts.refundAddr,
+      opts.amountSat,
+      coin,
+    );
 
     const http = this.getHttp(opts);
     opts.method = 'POST';
     opts.headers = opts.headers || {
-      'Accept': BitcorePayPro.LEGACY_PAYMENT[COIN].ACK_CONTENT_TYPE,
+      Accept: BitcorePayPro.LEGACY_PAYMENT[COIN].ACK_CONTENT_TYPE,
       'Content-Type': BitcorePayPro.LEGACY_PAYMENT[COIN].CONTENT_TYPE,
       // 'Content-Type': 'application/octet-stream',
     };
@@ -276,7 +323,7 @@ export class PayPro {
           memo = ack.get('memo');
         } catch (e) {
           log.error('Could not decode paymentACK');
-        };
+        }
       }
       return cb(null, rawData, memo);
     });

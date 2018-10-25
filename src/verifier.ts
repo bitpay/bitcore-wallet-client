@@ -2,17 +2,17 @@ import * as _ from 'lodash';
 
 import * as Bitcore from 'bitcore-lib';
 
-import { 
-  deriveAddress, 
-  getCopayerHash, 
-  verifyMessage, 
-  decryptMessage, 
-  xPubToCopayerId, 
-  verifyRequestPubKey, 
-  buildTx 
+import {
+  deriveAddress,
+  getCopayerHash,
+  verifyMessage,
+  decryptMessage,
+  xPubToCopayerId,
+  verifyRequestPubKey,
+  buildTx,
 } from './utils';
 
-import { Logger } from './logger';
+import {Logger} from './logger';
 const log = new Logger();
 
 export class Verifier {
@@ -28,9 +28,18 @@ export class Verifier {
     // TODO preconditions
     if (!credentials.isComplete()) throw new Error();
 
-    const local = deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin);
-    return (local.address == address.address &&
-      _.difference(local.publicKeys, address.publicKeys).length === 0);
+    const local = deriveAddress(
+      address.type || credentials.addressType,
+      credentials.publicKeyRing,
+      address.path,
+      credentials.m,
+      credentials.network,
+      credentials.coin,
+    );
+    return (
+      local.address == address.address &&
+      _.difference(local.publicKeys, address.publicKeys).length === 0
+    );
   }
 
   /**
@@ -42,8 +51,12 @@ export class Verifier {
   public checkCopayers(credentials, copayers): boolean {
     // TODO preconditions
     if (!credentials.walletPrivKey) throw new Error();
-    
-    const walletPubKey = Bitcore.PrivateKey.fromString(credentials.walletPrivKey).toPublicKey().toString();
+
+    const walletPubKey = Bitcore.PrivateKey.fromString(
+      credentials.walletPrivKey,
+    )
+      .toPublicKey()
+      .toString();
 
     if (copayers.length != credentials.n) {
       log.error('Missing public keys in server response');
@@ -53,7 +66,7 @@ export class Verifier {
     // Repeated xpub kes?
     let uniq = [];
     let error;
-    _.each(copayers, (copayer) => {
+    _.each(copayers, copayer => {
       if (error) return;
 
       if (uniq[copayers.xPubKey]++) {
@@ -62,11 +75,20 @@ export class Verifier {
       }
 
       // Not signed pub keys
-      if (!(copayer.encryptedName || copayer.name) || !copayer.xPubKey || !copayer.requestPubKey || !copayer.signature) {
+      if (
+        !(copayer.encryptedName || copayer.name) ||
+        !copayer.xPubKey ||
+        !copayer.requestPubKey ||
+        !copayer.signature
+      ) {
         log.error('Missing copayer fields in server response');
         error = true;
       } else {
-        const hash = getCopayerHash(copayer.encryptedName || copayer.name, copayer.xPubKey, copayer.requestPubKey);
+        const hash = getCopayerHash(
+          copayer.encryptedName || copayer.name,
+          copayer.xPubKey,
+          copayer.requestPubKey,
+        );
         if (!verifyMessage(hash, copayer.signature, walletPubKey)) {
           log.error('Invalid signatures in server response');
           error = true;
@@ -77,7 +99,7 @@ export class Verifier {
     if (error) return false;
 
     if (!_.includes(_.map(copayers, 'xPubKey'), credentials.xPubKey)) {
-      log.error('Server response does not contains our public keys')
+      log.error('Server response does not contains our public keys');
       return false;
     }
     return true;
@@ -92,8 +114,8 @@ export class Verifier {
    */
   public checkProposalCreation(args, txp, encryptingKey): boolean {
     const strEqual = (str1, str2) => {
-      return ((!str1 && !str2) || (str1 === str2));
-    }
+      return (!str1 && !str2) || str1 === str2;
+    };
 
     if (txp.outputs.length != args.outputs.length) return false;
 
@@ -118,8 +140,10 @@ export class Verifier {
       changeAddress = txp.changeAddress.address;
     }
 
-    if (args.changeAddress && !strEqual(changeAddress, args.changeAddress)) return false;
-    if (_.isNumber(args.feePerKb) && (txp.feePerKb != args.feePerKb)) return false;
+    if (args.changeAddress && !strEqual(changeAddress, args.changeAddress))
+      return false;
+    if (_.isNumber(args.feePerKb) && txp.feePerKb != args.feePerKb)
+      return false;
     if (!strEqual(txp.payProUrl, args.payProUrl)) return false;
 
     let decryptedMessage = null;
@@ -130,7 +154,8 @@ export class Verifier {
       return false;
     }
     if (!strEqual(txp.message, decryptedMessage)) return false;
-    if (args.customData && !_.isEqual(txp.customData, args.customData)) return false;
+    if (args.customData && !_.isEqual(txp.customData, args.customData))
+      return false;
 
     return true;
   }
@@ -143,10 +168,12 @@ export class Verifier {
    */
   public checkTxProposalSignature(credentials, txp): boolean {
     if (!txp.creatorId) throw new Error('Transaction proposal without creator');
-    if (!credentials.isComplete()) throw new Error('Transaction proposal not completed');
+    if (!credentials.isComplete())
+      throw new Error('Transaction proposal not completed');
 
-    const creatorKeys = _.find(credentials.publicKeyRing, (item) => {
-      if (xPubToCopayerId(txp.coin || 'btc', item.xPubKey) === txp.creatorId) return true;
+    const creatorKeys = _.find(credentials.publicKeyRing, item => {
+      if (xPubToCopayerId(txp.coin || 'btc', item.xPubKey) === txp.creatorId)
+        return true;
     });
 
     if (!creatorKeys) return false;
@@ -154,9 +181,14 @@ export class Verifier {
 
     // If the txp using a selfsigned pub key?
     if (txp.proposalSignaturePubKey) {
-
       // Verify it...
-      if (!verifyRequestPubKey(txp.proposalSignaturePubKey, txp.proposalSignaturePubKeySig, creatorKeys.xPubKey))
+      if (
+        !verifyRequestPubKey(
+          txp.proposalSignaturePubKey,
+          txp.proposalSignaturePubKeySig,
+          creatorKeys.xPubKey,
+        )
+      )
         return false;
 
       creatorSigningPubKey = txp.proposalSignaturePubKey;
@@ -171,7 +203,7 @@ export class Verifier {
       hash = t.uncheckedSerialize();
     } else {
       throw new Error('Transaction proposal not supported');
-      }
+    }
 
     // TODO log.debug('Regenerating & verifying tx proposal hash -> Hash: ', hash, ' Signature: ', txp.proposalSignature);
     if (!verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey)) {
@@ -184,7 +216,6 @@ export class Verifier {
 
     return true;
   }
-
 
   /**
    * Check Payment Protocol
@@ -211,8 +242,7 @@ export class Verifier {
     //  return false;
 
     return toAddress == payproOpts.toAddress && amount == payproOpts.amount;
-  };
-
+  }
 
   /**
    * Check transaction proposal
@@ -224,11 +254,9 @@ export class Verifier {
   public checkTxProposal(credentials, txp, opts): boolean {
     opts = opts || {};
 
-    if (!this.checkTxProposalSignature(credentials, txp))
-      return false;
+    if (!this.checkTxProposalSignature(credentials, txp)) return false;
 
-    if (opts.paypro && !this.checkPaypro(txp, opts.paypro))
-      return false;
+    if (opts.paypro && !this.checkPaypro(txp, opts.paypro)) return false;
 
     return true;
   }
