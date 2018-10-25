@@ -586,8 +586,8 @@ export class Client extends EventEmitter {
 
     opts = opts || {};
 
-    function derive(nonCompliantDerivation): Credential {
-      return this.credentials.fromMnemonic(
+    let derive = (c, nonCompliantDerivation) => {
+      c.fromMnemonic(
         opts.coin || 'btc',
         opts.network || 'livenet',
         words,
@@ -600,10 +600,10 @@ export class Client extends EventEmitter {
           walletPrivKey: opts.walletPrivKey,
         },
       );
-    }
+    };
 
     try {
-      derive(false);
+      derive(this.credentials, false);
     } catch (e) {
       // TODO log.info('Mnemonic error:', e);
       return cb(new Errors.INVALID_BACKUP());
@@ -616,7 +616,8 @@ export class Client extends EventEmitter {
         err instanceof Errors.NOT_AUTHORIZED ||
         err instanceof Errors.WALLET_DOES_NOT_EXIST
       ) {
-        let altCredentials: Credential = derive(true);
+        const altCredentials = new Credentials();
+        derive(altCredentials, true);
         if (
           altCredentials.xPubKey.toString() ==
           this.credentials.xPubKey.toString()
