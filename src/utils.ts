@@ -207,6 +207,8 @@ export function getCopayerHash(name: string, xPubKey: string, requestPubKey: str
  * @return              Return true for verified and false for unverified
  */
 export function verifyMessage(text: string, signature: string, pubKey: string): boolean {
+  if (!signature) return false;
+  
   const pub = new PublicKey(pubKey);
   const hash = hashMessage(text);
 

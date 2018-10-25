@@ -53,7 +53,7 @@ export class Verifier {
     // Repeated xpub kes?
     let uniq = [];
     let error;
-    _.each(copayers, function(copayer) {
+    _.each(copayers, (copayer) => {
       if (error) return;
 
       if (uniq[copayers.xPubKey]++) {
@@ -91,7 +91,7 @@ export class Verifier {
    * @returns {Boolean} true or false
    */
   public checkProposalCreation(args, txp, encryptingKey): boolean {
-    function strEqual(str1, str2) {
+    const strEqual = (str1, str2) => {
       return ((!str1 && !str2) || (str1 === str2));
     }
 
@@ -145,7 +145,7 @@ export class Verifier {
     if (!txp.creatorId) throw new Error('Transaction proposal without creator');
     if (!credentials.isComplete()) throw new Error('Transaction proposal not completed');
 
-    const creatorKeys = _.find(credentials.publicKeyRing, function(item) {
+    const creatorKeys = _.find(credentials.publicKeyRing, (item) => {
       if (xPubToCopayerId(txp.coin || 'btc', item.xPubKey) === txp.creatorId) return true;
     });
 
@@ -171,14 +171,16 @@ export class Verifier {
       hash = t.uncheckedSerialize();
     } else {
       throw new Error('Transaction proposal not supported');
-    }
+      }
 
     // TODO log.debug('Regenerating & verifying tx proposal hash -> Hash: ', hash, ' Signature: ', txp.proposalSignature);
-    if (!verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
+    if (!verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey)) {
       return false;
+    }
 
-    if (!this.checkAddress(credentials, txp.changeAddress))
+    if (!this.checkAddress(credentials, txp.changeAddress)) {
       return false;
+    }
 
     return true;
   }
