@@ -21,7 +21,7 @@ export class PayPro {
     opts.agent = false;
     const http = opts.httpNode || (opts.proto === 'http' ? Http : Https);
 
-    let fn = opts.method == 'POST' ? 'post' : 'get';
+    let fn = opts.method == 'POST' ? 'request' : 'get';
 
     http[fn](opts, function(res) {
       let data: any = []; // List of Buffer objects

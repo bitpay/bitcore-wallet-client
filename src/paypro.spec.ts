@@ -46,7 +46,7 @@ describe('Paypro', () => {
       };
       return cb(res);
     };
-    httpNode.post = (opts, cb) => {
+    httpNode.request = (opts, cb) => {
       var res: any = {};
       res.statusCode = httpNode.error || 200;
       res.on = (e, cb) => {
