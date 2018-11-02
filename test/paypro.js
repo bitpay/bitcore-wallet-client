@@ -50,7 +50,7 @@ describe('paypro', function() {
       };
       return cb(res);
     };
-    httpNode.post = function(opts, cb) {
+    httpNode.request = function(opts, cb) {
       var res = {};
       res.statusCode = httpNode.error || 200;
       res.on = function(e, cb) {
