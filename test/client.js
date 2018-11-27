@@ -343,13 +343,22 @@ describe('client API', function() {
   });
 
   describe('Security check', function() {
-    it('should prevent overriding javascript function', function() {
+    it('should prevent overriding javascript function 1/2', function() {
       const a = Client.getKeys;
       (function() {
         Client.getKeys = function(p){
           a(p);
         };
       }).should.throw(TypeError, /Cannot add property getKeys, object is not extensible/);
+    });
+
+    it('should prevent overriding javascript function 2/2', function() {
+      const a = Client._encryptMessage;
+      (function() {
+        Client._encryptMessage = function(m){
+          a(m);
+        };
+      }).should.throw(TypeError, /Cannot assign to read only property/);
     });
   });
 
