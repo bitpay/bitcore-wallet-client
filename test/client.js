@@ -342,6 +342,17 @@ describe('client API', function() {
     });
   });
 
+  describe('Security check', function() {
+    it('should prevent overriding javascript function', function() {
+      const a = Client.getKeys;
+      (function() {
+        Client.getKeys = function(p){
+          a(p);
+        };
+      }).should.throw(TypeError, /Cannot add property getKeys, object is not extensible/);
+    });
+  });
+
   describe('Client Internals', function() {
     it('should expose bitcore', function() {
       should.exist(Client.Bitcore);
