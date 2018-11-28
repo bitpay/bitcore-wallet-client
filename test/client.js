@@ -343,7 +343,7 @@ describe('client API', function() {
     });
   });
 
-  describe('Security check', function() {
+  describe('Function overriding', function() {
     it('should prevent overriding javascript function 1/5', function() {
       var getKeys = Client.prototype.getKeys;
       (function() {
