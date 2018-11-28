@@ -27,6 +27,7 @@ var BitcorePayPro = require('bitcore-payment-protocol');
 
 var BWS = require('bitcore-wallet-service');
 
+var Credentials = require('../lib/credentials');
 var Common = require('../lib/common');
 var Constants = Common.Constants;
 var Utils = Common.Utils;
@@ -343,22 +344,57 @@ describe('client API', function() {
   });
 
   describe('Security check', function() {
-    it('should prevent overriding javascript function 1/2', function() {
-      const a = Client.getKeys;
+    it('should prevent overriding javascript function 1/5', function() {
+      var getKeys = Client.prototype.getKeys;
       (function() {
-        Client.getKeys = function(p){
-          a(p);
-        };
-      }).should.throw(TypeError, /Cannot add property getKeys, object is not extensible/);
-    });
-
-    it('should prevent overriding javascript function 2/2', function() {
-      const a = Client._encryptMessage;
-      (function() {
-        Client._encryptMessage = function(m){
-          a(m);
+        Client.prototype.getKeys = function(p){
+          // Some malicious code here
         };
       }).should.throw(TypeError, /Cannot assign to read only property/);
+    });
+
+    it('should prevent overriding javascript function 2/5', function() {
+      var getKeys = Credentials.prototype.getKeys;
+      (function() {
+        Credentials.prototype.getKeys = function(p){
+          // Some malicious code here
+        };
+      }).should.throw(TypeError, /Cannot assign to read only property/);
+    });
+
+    it('should prevent overriding javascript function 3/5', function() {
+      var _encryptMessage = Client._encryptMessage;
+      (function() {
+        Client._encryptMessage = function(m){
+          // Some malicious code here
+        };
+      }).should.throw(TypeError, /Cannot assign to read only property/);
+    });
+
+    it('should prevent overriding javascript function 4/5', function() {
+      var checkAddress = Client.Verifier.checkAddress;
+      (function() {
+        Client.Verifier.checkAddress = function(c, a) {
+          // Some malicious code here
+        };
+      }).should.throw(TypeError, /Cannot assign to read only property/);
+    });
+
+    it('should prevent overriding javascript function 5/5', function() {
+      var signMessage = Client.Utils.signMessage;
+      (function() {
+        Client.Utils.signMessage = function(t, x) {
+          // Some malicious code here
+        };
+      }).should.throw(TypeError, /Cannot assign to read only property/);
+    });
+
+    it('should prevent to add property to a non-extensible object', function() {
+      (function() {
+        Client.NewGetKeys = function(p){
+          // code here...
+        };
+      }).should.throw(TypeError, /Cannot add property NewGetKeys, object is not extensible/);
     });
   });
 
@@ -639,9 +675,7 @@ describe('client API', function() {
           addressType: 'P2PKH',
         };
 
-        var x = Utils.newBitcoreTransaction;
-
-        Utils.newBitcoreTransaction = function() {
+        var newBitcoreTransaction = function() {
           return {
             from: sinon.stub(),
             to: sinon.stub(),
@@ -656,8 +690,6 @@ describe('client API', function() {
         (function() {
           var t = Utils.buildTx(txp);
         }).should.throw('Illegal State');
-
-        Utils.newBitcoreTransaction = x;
       });
       it('should build a tx with multiple outputs', function() {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
